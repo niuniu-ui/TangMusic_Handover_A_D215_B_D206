@@ -1,0 +1,1304 @@
+window.TangCatalog = {
+  "version": 3,
+  "updated": "2026-10-28",
+  "items": [
+    {
+      "id": "ode-528",
+      "title": "欢乐颂",
+      "composer": "贝多芬 · 合唱编配",
+      "description": "熟悉的旋律，从上声部开始。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=528",
+      "url": "https://www.mutopiaproject.org/ftp/BeethovenLv/ode/ode.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 2192,
+      "sha256": "fb1604c08c865b275b464d74e5a7c526ff1a8acccdf9853cb92f0778daaed14b",
+      "duration": 38.4,
+      "bpm": 100,
+      "previewSeconds": 38.4,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "upper",
+          "notes": 121,
+          "low": 61,
+          "high": 74,
+          "shift": 0,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "lower",
+          "notes": 117,
+          "low": 43,
+          "high": 67,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "minuet-75",
+      "title": "G 大调小步舞曲",
+      "composer": "BWV Anh. 114 · 键盘曲",
+      "description": "选择旋律声部，练习三拍子的律动。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=75",
+      "url": "https://www.mutopiaproject.org/ftp/BachJS/BWVAnh114/anna-magdalena-04/anna-magdalena-04.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 1987,
+      "sha256": "fd87a6673e18104047842a1c858d2c9d8eb9ad845d7a8fa46e3664b17642cb75",
+      "duration": 41.142816,
+      "bpm": 140,
+      "previewSeconds": 41.142816,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "one:",
+          "notes": 129,
+          "low": 59,
+          "high": 83,
+          "shift": 0,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "two:",
+          "notes": 75,
+          "low": 43,
+          "high": 64,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "musette-79",
+      "title": "缪塞特舞曲",
+      "composer": "BWV Anh. 126 · 键盘曲",
+      "description": "短小的巴洛克舞曲，先练习一个声部。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=79",
+      "url": "https://www.mutopiaproject.org/ftp/BachJS/BWVAnh126/anna-magdalena-22/anna-magdalena-22.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 1650,
+      "sha256": "3b03c3939b767a0d46b77eba058d6decc0f191bfb1aa81a1a3bafc9c49098275",
+      "duration": 20,
+      "bpm": 120,
+      "previewSeconds": 20,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "one:",
+          "notes": 91,
+          "low": 57,
+          "high": 81,
+          "shift": 0,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "two:",
+          "notes": 80,
+          "low": 38,
+          "high": 57,
+          "shift": 24,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "greensleeves-1265",
+      "title": "绿袖子",
+      "composer": "传统旋律 · 手风琴编配",
+      "description": "含多个声部，可选择旋律并截取练习片段。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1265",
+      "url": "https://www.mutopiaproject.org/ftp/Traditional/GreensleevesAcc/GreensleevesAcc.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 3232,
+      "sha256": "ec448ae781be40fdc2ddb24f734d7212d7ea5722616999cccbaf74998e1d34d0",
+      "duration": 38.800000000000004,
+      "bpm": 150,
+      "previewSeconds": 38.800000000000004,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "treble",
+          "notes": 72,
+          "low": 64,
+          "high": 79,
+          "shift": 0,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "bass",
+          "notes": 218,
+          "low": 40,
+          "high": 62,
+          "shift": 13,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "auld-lang-syne-1121",
+      "title": "友谊地久天长",
+      "composer": "传统旋律 · 霍雷茨基吉他编配",
+      "description": "熟悉的告别旋律，选择声部后检查音域与移调。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1121",
+      "url": "https://www.mutopiaproject.org/ftp/HoretzkyF/horetzky31/horetzky31.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 1272,
+      "sha256": "7451d7be42ee52f15ba8b8c9651bcb8fdd2a759531c6297b875e9a65581afb19",
+      "duration": 26.249989499999998,
+      "bpm": 72,
+      "previewSeconds": 26.249989499999998,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "acoustic guitar (nylon)",
+          "notes": 134,
+          "low": 55,
+          "high": 86,
+          "shift": -2,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "au-clair-1111",
+      "title": "月光下",
+      "composer": "法国民歌 · 霍雷茨基吉他编配",
+      "description": "Au Clair de la Lune，以短句练习连贯演奏。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1111",
+      "url": "https://www.mutopiaproject.org/ftp/HoretzkyF/horetzky21/horetzky21.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 1247,
+      "sha256": "5fe77a997dff609a9867805e28875794d8a75f59b225f97ba208c1ecacc458b6",
+      "duration": 32,
+      "bpm": 60,
+      "previewSeconds": 32,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "acoustic guitar (nylon)",
+          "notes": 129,
+          "low": 52,
+          "high": 76,
+          "shift": 1,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "silent-night-1295",
+      "title": "平安夜",
+      "composer": "格鲁伯 · 四声部编配",
+      "description": "从高声部开始练习，其他声部可单独适配。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1295",
+      "url": "https://www.mutopiaproject.org/ftp/GruberFX/stille_nacht/stille_nacht.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 1618,
+      "sha256": "c5d4e634edb067b7bda02f148f8f43ccfeac7bb9e10bd3add9051057ae6e9f39",
+      "duration": 36,
+      "bpm": 60,
+      "previewSeconds": 36,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "upper",
+          "notes": 90,
+          "low": 57,
+          "high": 75,
+          "shift": 0,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "lower",
+          "notes": 83,
+          "low": 41,
+          "high": 60,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "candeur-202",
+      "title": "坦诉",
+      "composer": "布格缪勒 · Op.100 No.1",
+      "description": "短篇键盘练习曲，练习连音与平稳的乐句。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=202",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-01/25EF-01.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 2564,
+      "sha256": "ad185dbf3cb7e3e187cbe6e38c5ead706cf375b9d441f7191429027436b2a8e4",
+      "duration": 36.315712,
+      "bpm": 152,
+      "previewSeconds": 36.315712,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VoiceI",
+          "notes": 144,
+          "low": 64,
+          "high": 84,
+          "shift": 0,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:VoiceIII",
+          "notes": 97,
+          "low": 47,
+          "high": 68,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "arabesque-203",
+      "title": "阿拉伯风格曲",
+      "composer": "布格缪勒 · Op.100 No.2",
+      "description": "快速短句练习，可先降低演奏速度。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=203",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-02/25EF-02.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 2643,
+      "sha256": "9b689a9b3f178e7bb2b5899d0559e223e9d8de7081d83fc087760ac2b4d378e1",
+      "duration": 26.052576,
+      "bpm": 152,
+      "previewSeconds": 26.052576,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:",
+          "notes": 106,
+          "low": 57,
+          "high": 93,
+          "shift": null,
+          "possible": false
+        },
+        {
+          "id": "track-1",
+          "name": "down:VoiceI",
+          "notes": 177,
+          "low": 45,
+          "high": 69,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "pastorale-218",
+      "title": "牧歌",
+      "composer": "布格缪勒 · Op.100 No.3",
+      "description": "柔和的田园舞曲，先分声部练习再合奏。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=218",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-03/25EF-03.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 3416,
+      "sha256": "192500ee12358537bf92811064ee4ad0b680c78302d5762175a3c32fe573a577",
+      "duration": 51,
+      "bpm": 100,
+      "previewSeconds": 51,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VoiceI",
+          "notes": 128,
+          "low": 64,
+          "high": 91,
+          "shift": -7,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:",
+          "notes": 227,
+          "low": 43,
+          "high": 70,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "tendre-fleur-221",
+      "title": "娇嫩的花",
+      "composer": "布格缪勒 · Op.100 No.10",
+      "description": "用轻巧的旋律练习均匀触键与乐句衔接。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=221",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-10/25EF-10.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 2773,
+      "sha256": "58dd9eec57bfcb7fb8a924530e8f6c1e1599a02fc10cc4f79ae6d1ef6e2a0c85",
+      "duration": 37.499919999999996,
+      "bpm": 152,
+      "previewSeconds": 37.499919999999996,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcI",
+          "notes": 162,
+          "low": 62,
+          "high": 90,
+          "shift": -6,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:",
+          "notes": 107,
+          "low": 52,
+          "high": 71,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "minuet-c-1613",
+      "title": "C 小调小步舞曲",
+      "composer": "BWV Anh.121 · 键盘曲",
+      "description": "感受小调色彩，按最终选定声部确认适配。",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1613",
+      "url": "https://www.mutopiaproject.org/ftp/BachJS/BWVAnh121/BWV-121/BWV-121.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-22",
+      "size": 1503,
+      "sha256": "197d23ad4db1d3d6bb1963d3898e1cb0a4419d8078fbd34f9e9a1210357f1485",
+      "duration": 39.99996,
+      "bpm": 108,
+      "previewSeconds": 39.99996,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "upper:",
+          "notes": 80,
+          "low": 58,
+          "high": 80,
+          "shift": 0,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "lower:",
+          "notes": 69,
+          "low": 41,
+          "high": 55,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-219",
+      "title": "小小聚会",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "La Petite Réunion",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=219",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-04/25EF-04.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 3860,
+      "sha256": "c88010cace8858c30ca95e3075cf5e4afdde19b5ad7c37cceb96159f6c55326c",
+      "duration": 46.973583999999995,
+      "bpm": 152,
+      "previewSeconds": 46.973583999999995,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:",
+          "notes": 292,
+          "low": 59,
+          "high": 88,
+          "shift": -4,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcII",
+          "notes": 103,
+          "low": 48,
+          "high": 68,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-214",
+      "title": "天真",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Innocence",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=214",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-05/25EF-05.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 2139,
+      "sha256": "39768b50abb623d24986b0e3993518ca92a6f1340d6154fc092f218cb6b97fee",
+      "duration": 26.785700000000002,
+      "bpm": 112,
+      "previewSeconds": 26.785700000000002,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcI",
+          "notes": 128,
+          "low": 57,
+          "high": 96,
+          "shift": null,
+          "possible": false
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcII",
+          "notes": 87,
+          "low": 41,
+          "high": 65,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-215",
+      "title": "前进",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Progrès",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=215",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-06/25EF-06.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 2148,
+      "sha256": "d28e280d333d8a97262a4ffeba00fab251d382cd9a17e45a517d6613cb03f722",
+      "duration": 29.090880000000002,
+      "bpm": 132,
+      "previewSeconds": 29.090880000000002,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcI",
+          "notes": 115,
+          "low": 64,
+          "high": 88,
+          "shift": -4,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcII",
+          "notes": 98,
+          "low": 48,
+          "high": 65,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-216",
+      "title": "清澈的溪流",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Le Courant Limpide",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=216",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-07/25EF-07.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 2293,
+      "sha256": "9547c21afbaa004cd95174752098bf6997a541d97759d2ef34f499432c5ecab5",
+      "duration": 21.818175999999998,
+      "bpm": 176,
+      "previewSeconds": 21.818175999999998,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcI",
+          "notes": 159,
+          "low": 57,
+          "high": 91,
+          "shift": null,
+          "possible": false
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcIII",
+          "notes": 60,
+          "low": 43,
+          "high": 67,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-217",
+      "title": "优美",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "La Gracieuse",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=217",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-08/25EF-08.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 2958,
+      "sha256": "f103bc6cb67cdbbad517170d6a7c51428e9a8481c74eec10258ea34a58b832fd",
+      "duration": 28.799999999999997,
+      "bpm": 100,
+      "previewSeconds": 28.799999999999997,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcI",
+          "notes": 193,
+          "low": 67,
+          "high": 101,
+          "shift": null,
+          "possible": false
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcII",
+          "notes": 125,
+          "low": 41,
+          "high": 65,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-220",
+      "title": "狩猎",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "La Chasse",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=220",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-09/25EF-09.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 5072,
+      "sha256": "eb2d52c7df1681e23b8dc258d6933060984c7013d32c1a140c121fda48801848",
+      "duration": 50.55,
+      "bpm": 200,
+      "previewSeconds": 50.55,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:",
+          "notes": 220,
+          "low": 60,
+          "high": 84,
+          "shift": 0,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcII",
+          "notes": 305,
+          "low": 43,
+          "high": 67,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-222",
+      "title": "鹡鸰",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "La Bergeronnette",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=222",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-11/25EF-11.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 2432,
+      "sha256": "815d6886a43312608acfe1a8ffbd3b4ff982a8ac857be771dc102b1916d34754",
+      "duration": 22.405014,
+      "bpm": 158,
+      "previewSeconds": 22.405014,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcI",
+          "notes": 130,
+          "low": 64,
+          "high": 91,
+          "shift": -7,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcII",
+          "notes": 116,
+          "low": 48,
+          "high": 79,
+          "shift": 5,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-223",
+      "title": "再会",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "L'Adieu",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=223",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-12/25EF-12.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 5949,
+      "sha256": "4df722747c392323660dc4f9940acbb38af8b9952759d4c5cc7a02cf2e7f5cf8",
+      "duration": 53.31506100000001,
+      "bpm": 184,
+      "previewSeconds": 53.31506100000001,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcI",
+          "notes": 340,
+          "low": 60,
+          "high": 93,
+          "shift": null,
+          "possible": false
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcII",
+          "notes": 261,
+          "low": 45,
+          "high": 69,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-224",
+      "title": "安慰",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Consolation",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=224",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-13/25EF-13.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 2810,
+      "sha256": "e06faed242a40debad24cfd95f0376bbba8ec12f88a75cc6443dc53c9db5eb6e",
+      "duration": 41.44728,
+      "bpm": 152,
+      "previewSeconds": 41.44728,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcII",
+          "notes": 186,
+          "low": 66,
+          "high": 84,
+          "shift": 0,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcIII",
+          "notes": 94,
+          "low": 48,
+          "high": 71,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-225",
+      "title": "斯蒂利亚舞曲",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "La Styrienne",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=225",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-14/25EF-14.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 3272,
+      "sha256": "99052280f7e0895f4850f7691540ad8931b3f0fec3961ee6ad538faace0190fc",
+      "duration": 37.026801205729164,
+      "bpm": 176,
+      "previewSeconds": 37.026801205729164,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:2",
+          "notes": 172,
+          "low": 61,
+          "high": 86,
+          "shift": -2,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:",
+          "notes": 159,
+          "low": 43,
+          "high": 69,
+          "shift": 12,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-227",
+      "title": "叙事曲",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Ballade",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=227",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-15/25EF-15.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 6911,
+      "sha256": "cfba2544b8049f72bfda038620ff0543e9e1845b6e4d7431e4798f50ce06f716",
+      "duration": 82.78845050000001,
+      "bpm": 104,
+      "previewSeconds": 82.78845050000001,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcI",
+          "notes": 472,
+          "low": 55,
+          "high": 96,
+          "shift": null,
+          "possible": false
+        },
+        {
+          "id": "track-1",
+          "name": "down:",
+          "notes": 284,
+          "low": 43,
+          "high": 87,
+          "shift": null,
+          "possible": false
+        }
+      ]
+    },
+    {
+      "id": "mutopia-228",
+      "title": "甜蜜的忧伤",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Douce Plainte",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=228",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-16/25EF-16.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 2599,
+      "sha256": "c2ae841112f76ee00732264d501f9c66df048d7626f61f95883292a8867ece8c",
+      "duration": 33.571395,
+      "bpm": 126,
+      "previewSeconds": 33.571395,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcI",
+          "notes": 130,
+          "low": 62,
+          "high": 86,
+          "shift": -2,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcII",
+          "notes": 131,
+          "low": 50,
+          "high": 74,
+          "shift": 3,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-229",
+      "title": "喋喋不休",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "La Babillarde",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=229",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-17/25EF-17.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 2710,
+      "sha256": "5893fa14e84e9c5e19080a365b76db400f861e4197dcf5ee402d9fea79f68e8c",
+      "duration": 28.88886,
+      "bpm": 108,
+      "previewSeconds": 28.88886,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:VcI",
+          "notes": 145,
+          "low": 63,
+          "high": 89,
+          "shift": -5,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:",
+          "notes": 142,
+          "low": 36,
+          "high": 65,
+          "shift": 17,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-230",
+      "title": "不安",
+      "composer": "布格缪勒 · 钢琴练习曲",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Inquiétude",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=230",
+      "url": "https://www.mutopiaproject.org/ftp/BurgmullerJFF/O100/25EF-18/25EF-18.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 2946,
+      "sha256": "355c12bf2789ad7d95b2afab18b08556c9d1e31602256026ce5fa71c1f9244fe",
+      "duration": 26.304311,
+      "bpm": 138,
+      "previewSeconds": 26.304311,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:",
+          "notes": 173,
+          "low": 57,
+          "high": 88,
+          "shift": -4,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:VcII",
+          "notes": 149,
+          "low": 40,
+          "high": 69,
+          "shift": 13,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-931",
+      "title": "致爱丽丝",
+      "composer": "贝多芬 · 钢琴",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Für Elise",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=931",
+      "url": "https://www.mutopiaproject.org/ftp/BeethovenLv/WoO59/fur_Elise_WoO59/fur_Elise_WoO59.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 7590,
+      "sha256": "1c12c21c7bbf4cf163896732672648a69d497636059837abd153c71abe50215a",
+      "duration": 130.4166145,
+      "bpm": 72,
+      "previewSeconds": 120,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:",
+          "notes": 517,
+          "low": 57,
+          "high": 100,
+          "shift": null,
+          "possible": false
+        },
+        {
+          "id": "track-1",
+          "name": "down:",
+          "notes": 388,
+          "low": 33,
+          "high": 76,
+          "shift": null,
+          "possible": false
+        }
+      ]
+    },
+    {
+      "id": "mutopia-108",
+      "title": "土耳其进行曲",
+      "composer": "莫扎特 · 钢琴",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Sonate Opus KV 331 - Rondo Alla Turca",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=108",
+      "url": "https://www.mutopiaproject.org/ftp/MozartWA/KV331/KV331_3_RondoAllaTurca/KV331_3_RondoAllaTurca.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 13772,
+      "sha256": "c14299cbdd34c8b2081da84dc06519ef8a52a0d589ee53c758d28b8e3d727d1c",
+      "duration": 255,
+      "bpm": 60,
+      "previewSeconds": 120,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "acoustic grand piano",
+          "notes": 838,
+          "low": 64,
+          "high": 86,
+          "shift": -2,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "acoustic grand piano",
+          "notes": 776,
+          "low": 38,
+          "high": 66,
+          "shift": 15,
+          "possible": true
+        }
+      ]
+    },
+    {
+      "id": "mutopia-23",
+      "title": "枫叶拉格",
+      "composer": "乔普林 · 拉格泰姆",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Maple Leaf Rag",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=23",
+      "url": "https://www.mutopiaproject.org/ftp/JoplinS/maple/maple.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 21518,
+      "sha256": "3dd712a85fabd267f5a2cee5cb23af4683408c2f29b8814721844498f1ee4f66",
+      "duration": 144,
+      "bpm": 120,
+      "previewSeconds": 120,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:",
+          "notes": 1193,
+          "low": 60,
+          "high": 92,
+          "shift": null,
+          "possible": false
+        },
+        {
+          "id": "track-1",
+          "name": "down:",
+          "notes": 1373,
+          "low": 32,
+          "high": 73,
+          "shift": null,
+          "possible": false
+        }
+      ]
+    },
+    {
+      "id": "mutopia-263",
+      "title": "演艺人",
+      "composer": "乔普林 · 拉格泰姆",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "The Entertainer",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=263",
+      "url": "https://www.mutopiaproject.org/ftp/JoplinS/entertainer/entertainer.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 22084,
+      "sha256": "33e4e81ee64ffb2edf90d1c6a1ddee7276507296bfb915c2bb775231a467f066",
+      "duration": 252.9165655,
+      "bpm": 72,
+      "previewSeconds": 120,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up:",
+          "notes": 1394,
+          "low": 60,
+          "high": 90,
+          "shift": -6,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down:",
+          "notes": 1227,
+          "low": 31,
+          "high": 65,
+          "shift": null,
+          "possible": false
+        }
+      ]
+    },
+    {
+      "id": "mutopia-2236",
+      "title": "小星星变奏曲（吉他二重奏）",
+      "composer": "莫扎特 · 吉他二重奏",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Ah Vous Dirai-Je Maman",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=2236",
+      "url": "https://www.mutopiaproject.org/ftp/MozartWA/KV265/guitar-duo-complete/guitar-duo-complete.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 21710,
+      "sha256": "f6c92ab2c25184bc848fb47b4235c27fb4616b91124aec2bd7129b63b9350969",
+      "duration": 532.3796309999999,
+      "bpm": 60,
+      "previewSeconds": 120,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "acoustic grand piano",
+          "notes": 117,
+          "low": 48,
+          "high": 76,
+          "shift": 5,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "acoustic grand piano",
+          "notes": 34,
+          "low": 41,
+          "high": 53,
+          "shift": 12,
+          "possible": true
+        },
+        {
+          "id": "track-2",
+          "name": "acoustic grand piano",
+          "notes": 96,
+          "low": 48,
+          "high": 76,
+          "shift": 5,
+          "possible": true
+        },
+        {
+          "id": "track-3",
+          "name": "acoustic grand piano",
+          "notes": 40,
+          "low": 41,
+          "high": 60,
+          "shift": 12,
+          "possible": true
+        },
+        {
+          "id": "track-4",
+          "name": ":1",
+          "notes": 73,
+          "low": 51,
+          "high": 68,
+          "shift": 12,
+          "possible": true
+        },
+        {
+          "id": "track-5",
+          "name": "acoustic grand piano",
+          "notes": 56,
+          "low": 42,
+          "high": 60,
+          "shift": 12,
+          "possible": true
+        },
+        {
+          "id": "track-6",
+          "name": "acoustic grand piano",
+          "notes": 91,
+          "low": 48,
+          "high": 72,
+          "shift": 12,
+          "possible": true
+        },
+        {
+          "id": "track-7",
+          "name": ":1",
+          "notes": 53,
+          "low": 40,
+          "high": 60,
+          "shift": 24,
+          "possible": true
+        },
+        {
+          "id": "track-8",
+          "name": ":1",
+          "notes": 82
+        },
+        {
+          "id": "track-9",
+          "name": ":1",
+          "notes": 179
+        },
+        {
+          "id": "track-10",
+          "name": "acoustic grand piano",
+          "notes": 117
+        },
+        {
+          "id": "track-11",
+          "name": "acoustic grand piano",
+          "notes": 108
+        },
+        {
+          "id": "track-12",
+          "name": "acoustic grand piano",
+          "notes": 107
+        },
+        {
+          "id": "track-13",
+          "name": "acoustic grand piano",
+          "notes": 104
+        },
+        {
+          "id": "track-14",
+          "name": "acoustic grand piano",
+          "notes": 68
+        },
+        {
+          "id": "track-15",
+          "name": "acoustic grand piano",
+          "notes": 52
+        },
+        {
+          "id": "track-16",
+          "name": "acoustic grand piano",
+          "notes": 50
+        },
+        {
+          "id": "track-17",
+          "name": "acoustic grand piano",
+          "notes": 47
+        },
+        {
+          "id": "track-18",
+          "name": ":1",
+          "notes": 71
+        },
+        {
+          "id": "track-19",
+          "name": "acoustic grand piano",
+          "notes": 90
+        },
+        {
+          "id": "track-20",
+          "name": ":2",
+          "notes": 79
+        },
+        {
+          "id": "track-21",
+          "name": "acoustic grand piano",
+          "notes": 44
+        },
+        {
+          "id": "track-22",
+          "name": "acoustic grand piano",
+          "notes": 31
+        },
+        {
+          "id": "track-23",
+          "name": "acoustic grand piano",
+          "notes": 111
+        },
+        {
+          "id": "track-24",
+          "name": "acoustic grand piano",
+          "notes": 231
+        },
+        {
+          "id": "track-25",
+          "name": "acoustic grand piano",
+          "notes": 271
+        }
+      ]
+    },
+    {
+      "id": "mutopia-504",
+      "title": "梦幻曲",
+      "composer": "舒曼 · 童年情景",
+      "description": "下载后选择旋律声部；长曲可截取片段并降低速度练习。",
+      "sourceTitle": "Kinderscenen - Traümerei",
+      "sourceUrl": "https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=504",
+      "url": "https://www.mutopiaproject.org/ftp/SchumannR/O15/SchumannOp15No07/SchumannOp15No07.mid",
+      "license": "Public Domain",
+      "publisher": "Mutopia Project",
+      "verified": "2026-10-28",
+      "size": 3708,
+      "sha256": "6e0045d5783ff28dedcf05813074fe407ca3846e5e2a7246f2793ac5614e4851",
+      "duration": 110.6833265,
+      "bpm": 60,
+      "previewSeconds": 110.6833265,
+      "tracks": [
+        {
+          "id": "track-0",
+          "name": "up",
+          "notes": 191,
+          "low": 53,
+          "high": 82,
+          "shift": 0,
+          "possible": true
+        },
+        {
+          "id": "track-1",
+          "name": "down",
+          "notes": 148,
+          "low": 34,
+          "high": 69,
+          "shift": null,
+          "possible": false
+        }
+      ]
+    }
+  ]
+};

@@ -1,0 +1,51 @@
+{
+  "date": "2026-11-03",
+  "boards": {
+    "A_D215": {
+      "source": "D:\\TangMusic_Files\\TangMusic_Dual_Board\\Delivery\\A_KeyFix_D215",
+      "project": "TangMusic_A_KeyFix_D215.gprj",
+      "source_file_count": 173,
+      "source_unchanged": true,
+      "firmware_sha256": "e222df1028f30b38fa79a5296c9da6554220f635b2dee7f6f361170bb82ff05c",
+      "firmware_bytes": 40472063,
+      "pin_records": 145
+    },
+    "B_D206": {
+      "source": "D:\\TangMusic_Files\\TangMusic_Dual_Board\\Delivery\\B_Clean_UI_D206",
+      "project": "TangMusic_B_Clean_UI_D206.gprj",
+      "source_file_count": 177,
+      "source_unchanged": true,
+      "firmware_sha256": "16cb512602466caf91ff4fe791f35403526ddc4d7b0787916a34260ce93f70bf",
+      "firmware_bytes": 39984213,
+      "pin_records": 96
+    }
+  },
+  "app": {
+    "source": "D:\\TangMusic_Files\\App_完整包_0.7.3\\Android工程",
+    "source_files": 70,
+    "web_files_matched_to_apk": 30,
+    "apk_sha256": "202d3f9cf65fd2734d88a2e30d8e83823c0256738d053fb6864dbb40496daa69",
+    "apk_bytes": 560073,
+    "gradle_five_ui_inputs_equal_packaged_assets": true,
+    "rebuild_performed_this_handover": false
+  },
+  "package_title": "TangMusic完整代码与技术交接",
+  "confirmed_A": "D215",
+  "confirmed_B": "D206",
+  "app_version": "0.7.3-library",
+  "manual_pages": 14,
+  "documentation": {
+    "docx_sha256": "52d535e24682ddd2776b3d369701a1febd15d7050de2473987edf6cdd34c4d98",
+    "pdf_sha256": "b0a2e3794c26997b48d2847ae39ba9f1f09d44c60f5bb5a0d64e062d90be2c91"
+  },
+  "engineering_scope": "源码、资源及App工程原样归档；补充技术文档与表格。没有重新综合、PnR、APK构建或硬件烧录。",
+  "timing_status": "两板当前STA均有setup违例：A2090，B342；不能称时序收敛。",
+  "not_included": [
+    "厂商软件/SDK/IDE安装包",
+    "测试软件、bench和测试脚本",
+    "历史诊断工程",
+    "本机缓存和签名私钥",
+    "大型实现数据库/网表和历史版本"
+  ],
+  "portable_paths": "包内README和手册使用相对目录；审计JSON中的原电脑路径仅为来源追溯，不是重建依赖。"
+}

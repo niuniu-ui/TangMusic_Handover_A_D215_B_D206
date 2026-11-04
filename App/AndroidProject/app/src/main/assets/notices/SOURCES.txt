@@ -1,0 +1,5 @@
+@tonejs/midi 2.0.28
+https://github.com/Tonejs/Midi
+MIT license
+Downloaded from npm with SHA-512 integrity verification.
+Bundled offline; no runtime CDN dependency.

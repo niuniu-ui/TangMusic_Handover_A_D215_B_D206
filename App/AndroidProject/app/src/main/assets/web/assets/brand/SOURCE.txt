@@ -1,0 +1,6 @@
+GOWIN official SVG sources, retrieved 2026-10-02
+https://www.gowinsemi.com.cn/images/GOWIN.svg
+https://www.gowinsemi.com.cn/images/LOGO-WHITE.svg
+UI palette: #005184, #00A0E9.
+Cropped assets retain the first two official vector paths and original colors; only viewBox and non-rendered metadata are changed.
+TANG MUSIC is the project name; this preview makes no claim of official endorsement.

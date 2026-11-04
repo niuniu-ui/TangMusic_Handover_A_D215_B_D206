@@ -1,0 +1,4643 @@
+{
+  "title": "TangMusic A D215 最新交付工程技术事实",
+  "source_root": "D:/TangMusic_Files/TangMusic_Dual_Board/Delivery/A_KeyFix_D215",
+  "audit_scope": "只读核验现有源码、约束、构建产物与成功烧录记录；本次未运行综合、PnR或烧录，未修改交付工程。",
+  "identity": {
+    "version": "A KeyFix D215",
+    "project": "TangMusic_A_KeyFix_D215.gprj",
+    "top": "studio_board_a",
+    "usercode": "0000D215",
+    "output_base": "TangMusic_A_KeyFix_D215",
+    "device": "GW5AST-LV138PG484AC1/I0",
+    "device_family": "GW5AST-138C / PBGA484A",
+    "identity_location": "GPRJ指定器件与文件列表；GUI顶层、UserCode及构建选项位于impl/TangMusic_A_KeyFix_D215_process_config.json，两份Tcl也显式设置同一身份。"
+  },
+  "responsibilities": [
+    "A板是乐器与音频主板：采集32键双触点矩阵、延音踏板、三编码器/五按键、笛子按键/气压和双IMU鼓棒。",
+    "A本地产生钢琴与笛/唢呐PCM，识别空气鼓手势并向B发送带时间戳事件；当前顶层REMOTE_SYNTH=1，空气鼓PCM由B合成回传。",
+    "A执行参数/触摸控制、蓝牙TMCP与录音回传、DDR录音/回放及Loop，完成三路乐器混音、音量/效果和PCM5102A I2S输出。",
+    "A通过RGMII以太网向B发状态/频谱/音频观察数据及鼓事件，接收B的触摸状态与鼓PCM。USB触摸主机与HDMI输出属于B，A顶层没有HDMI输出端口。",
+    "A的DDR仅供录音和Loop共享；显示资源位于B的DDR。src中的部分共享/历史显示模块并不等于A正在输出画面，须以studio_board_a实例化链为准。"
+  ],
+  "module_chains": [
+    {
+      "function": "实体钢琴",
+      "chain": [
+        "fpc_drive/fpc_sense",
+        "matrix_scan",
+        "key_velocity / keyboard_scan_input",
+        "studio_keymap",
+        "instrument_audio / ui_note_merge",
+        "studio_sustain_events",
+        "midi_keyboard_synth_v2",
+        "32个piano_voice_v2(SHARED_GAIN=0)",
+        "audio_mixer_32",
+        "piano_effects",
+        "ui_master_volume(钢琴)",
+        "三路混音"
+      ],
+      "notes": "矩阵行仅输出0或高阻；力度来自双触点时间及原key_velocity_curve，不使用UART或上位机转发琴键。物理与触摸输入有独立所有权，最终合并再送延音与合成。"
+    },
+    {
+      "function": "触摸钢琴/参数",
+      "chain": [
+        "B的USB触摸",
+        "studio_display_link / studio_remote_touch",
+        "studio_controller",
+        "ui_mask_events或参数同步",
+        "ui_note_merge / tmcp_uart_endpoint"
+      ],
+      "notes": "A保留控制器、参数提交与确认；B承担采集/界面代理。实体面板事件也进入studio_controller。"
+    },
+    {
+      "function": "电子笛/唢呐",
+      "chain": [
+        "flute_keys / flute_miso_filter / flute_adc",
+        "flute_fingering + flute_breath",
+        "flute_audio_control",
+        "flute_voice_select",
+        "ui_master_volume(笛)",
+        "三路混音"
+      ],
+      "notes": "与主音频共用50MHz及sample_tick。ADC SPI设计100kHz，pressure/supply成对采样设计1kHz；气息校准参数为16个预热样本及128个校准样本。无气息/未满足原发声门控时，单纯按键不等于出声。flute_uart_tx当前恒高，不输出桌面监控数据。"
+    },
+    {
+      "function": "空气鼓",
+      "chain": [
+        "双路115200 UART / ATK-IMU901",
+        "air_drum_imu_core / parser / config / hit",
+        "instrument_air_drum(REMOTE_SYNTH=1)",
+        "studio_drum_transport事件槽/采样索引",
+        "RGMII往返B",
+        "带标签16样本PCM块",
+        "studio_drum_transport 128样本播放延迟",
+        "ui_master_volume(鼓)",
+        "三路混音"
+      ],
+      "notes": "A此顶层不启用本地空气鼓合成。原32位active_mask是音符/槽状态；是否有PCM参与最终混音不由active_mask为零来静音。B128分量测试仍可与A实体琴/笛混音，具体吞吐/FFT证明属于B及其独立证据。"
+    },
+    {
+      "function": "最终音频",
+      "chain": [
+        "钢琴效果后音量PCM再右移1位",
+        "加笛PCM与B回传鼓PCM形成18位有符号和",
+        "饱和至16位combined_pcm",
+        "可选Loop叠加并饱和",
+        "ui_master_volume(总音量)",
+        "audio_sample_clock",
+        "pcm5102_i2s_tx",
+        "PCM5102A模拟输出"
+      ],
+      "notes": "录音回放启用时选择回放PCM而不是实时混音；静音/总音量仍有效。三路相加可能触发饱和，这不是无限幅值线性相加。频谱及录音观察的是DAC保持样本。"
+    },
+    {
+      "function": "录音、Loop及手机链路",
+      "chain": [
+        "studio_uart_router",
+        "tmcp_uart_endpoint / studio_record_protocol",
+        "studio_recorder或studio_audio_looper",
+        "record_ddr_bridge",
+        "studio_ddr_arbiter",
+        "DDR3_Memory_Interface_Top"
+      ],
+      "notes": "Bluetooth默认921600、8N1，LINK为低有效。录音器保留两个槽，MAX_SAMPLES=5859375，对设计Fs为每槽120秒。只有手机校验并保存后的确认才表示saved_on_phone，板上DDR数据不等于手机已保存。"
+    }
+  ],
+  "clock_and_audio": {
+    "host_clock": {
+      "pin": "V22",
+      "design_hz": 50000000,
+      "period_ns": 20
+    },
+    "sample_design_hz": 48828.125,
+    "sample_rule": "audio_sample_clock的10位计数器每1024个clk循环，在count==31时发布sample_tick并保持输出样本。该数值来自设计50MHz，不是本次对板上采样率的实测。",
+    "i2s": {
+      "standard": "Philips I2S",
+      "BCK_design_hz": 3125000,
+      "LRCK_design_hz": 48828.125,
+      "slot_bits": 32,
+      "sample_bits": 16,
+      "channels": "左右槽都发送同一16位混音；各槽未用低位为0",
+      "phase": "LRCK下降/上升后的第一个BCK位为填充位，MSB延后一位；DIN在BCK下降沿更新，接收端在上升沿采样。",
+      "MCLK": "顶层没有独立MCLK端口；模块注释采用BCK参考内部PLL的PCM5102A接法。",
+      "PA_EN": "AB16恒为1，关闭未使用的板载低有效功放；外部PCM5102A走I2S三线。"
+    },
+    "ethernet": {
+      "tx_design_hz": 125000000,
+      "rx_clock": "来自外部PHY，SDC按125MHz约束",
+      "PHY_reference_design_hz": 25000000,
+      "snapshot_period_design_us": 50,
+      "notes": "studio_display_link的PERIOD=2500个50MHz时钟；ready前等待PLL与启动计数，link_up还要求PHY配置/MDIO/链路及speed==2。"
+    },
+    "DDR": {
+      "memory_clock_constraint_hz": 400000000,
+      "user_interface_clock_constraint_hz": 100000000,
+      "notes": "Gowin_PLL和DDR3 IP产生/管理时钟；record_ddr_bridge跨50MHz与DDR用户时钟，校准完成后才开放存取。约束频率不是本次示波器测量。"
+    },
+    "startup": "instrument_audio有复位同步/POR和默认10000000个时钟的启动静音，后者按设计50MHz约为200ms。",
+    "SDC_clock_statements": [
+      "create_clock -name clk_50m -period 20.000 -waveform {0.000 10.000} [get_ports {clk}]",
+      "create_clock -name clk400 -period 2.5 -waveform {0 1.25} [get_nets {memory_clk}]",
+      "create_clock -name mem100 -period 10 -waveform {0 5} [get_pins {u_ddr3/gw3_top/u_ddr_phy_top/fclkdiv/CLKOUT}]",
+      "create_clock -name rx125 -period 8.000 [get_ports {rx_clk}]",
+      "create_clock -name tx125 -period 8.000 -waveform {0.000 4.000} [get_pins {net/pll/PLL_inst/CLKOUT0}]"
+    ]
+  },
+  "keyboard_and_fix": {
+    "matrix": "8行×8列触点，每键占相邻两个触点，共32键。750周期释放+500周期稳定=每行约25us，整帧约200us；DEBOUNCE_FRAMES=10，对应约2ms键态消抖。",
+    "logical_note_ids": "实体键事件编号41..72；实际音高由各voice的phase-step表与octave_group决定，不直接把事件编号当当前发声音高。",
+    "octave_groups": [
+      {
+        "group": 0,
+        "enabled_physical_keys": "7..31（从0计）",
+        "enabled_pitch_range": "C0–C2",
+        "exception": "前7个实体键有意禁用，保持原设计；不是本次交接中已确认的故障。"
+      },
+      {
+        "group": 1,
+        "enabled_physical_keys": "0..31",
+        "enabled_pitch_range": "F1–C4"
+      },
+      {
+        "group": 2,
+        "enabled_physical_keys": "0..31",
+        "enabled_pitch_range": "F3–C6",
+        "default": true
+      },
+      {
+        "group": 3,
+        "enabled_physical_keys": "0..31",
+        "enabled_pitch_range": "F5–C8"
+      }
+    ],
+    "D215_change": "只在midi_keyboard_synth_v2.v恢复32路独立voice PCM、SHARED_GAIN=0及原audio_mixer_32平衡加法树；每voice重新使用波形×力度、前级×包络两级乘法，共64个RTL乘法表达式。原力度、频率表、音区使能、House选择、通信与三探针保留。",
+    "history_boundary": "最低键无声是推动D215的历史问题。本手册应描述D215的处理措施与当前确认版本，不把旧诊断记录列成仍存在的已知功能故障；本次只读审计也不新增实板逐键听音结论。",
+    "timbre_labels": "A已有标准/House钢琴选择位。B D206把显示名改为“机械钢琴”和“电子合成琴”，这是B界面文字变化，不是本次修改A音色或音频算法。",
+    "phase_table_pitch_range_crosscheck": [
+      "C0-C2",
+      "F1-C4",
+      "F3-C6",
+      "F5-C8"
+    ]
+  },
+  "latency_probes": [
+    {
+      "signal": "piano_scan_probe",
+      "pin": "C18",
+      "definition": "矩阵实际行采样观察到某键从两触点全开变成至少一个触点闭合；位于消抖、第二触点力度及NoteOn之前。只有再次采样到两触点全开才重新武装；第二触点或保持按住不重复。"
+    },
+    {
+      "signal": "flute_key_probe",
+      "pin": "D19",
+      "definition": "独立两级同步加历史检测任一笛按键active-low新按；不等待气息、原消抖或有效指法。异步输入到逻辑探针约40–60ns；保持按住不重复，新加按键仍会触发。"
+    },
+    {
+      "signal": "drum_hit_probe",
+      "pin": "C19",
+      "definition": "A的live模式识别到左右IMU有效击打的同拍脉冲，位于事件FIFO、A→B合成和回传PCM之前；不是首次非零PCM探针，也不把自动demo作为人工击打。"
+    }
+  ],
+  "probe_limits": "三路均为50MHz的一拍逻辑脉冲（设计20ns），同拍多事件共用一拍，相邻事件可能连成相邻高周期。真实引脚脉宽/传播未在本次审计测量；测量总操作到声音延迟时，还须包含探针之前的扫描/传感器/手势时间。",
+  "pin_notes": [
+    "本文件后附all_CST_pins与grouped_pins均由当前constraints/studio_board_a.cst解析，不能用旧constraints/instrument.cst替代当前顶层引脚表。",
+    "fpc_drive为0/高阻的双向回读引脚，不能按普通高/低推挽矩阵行理解。",
+    "通用外部接口使用LVCMOS33；DDR使用SSTL15/SSTL15D。具体PULL_MODE/DRIVE/BANK_VCCIO以每条IO_PORT原文为准。",
+    "A18现为8×32 WS2812频谱矩阵DIN；B21为96灯琴键引导，D17为四块8×8鼓面板DIN，三者独立。",
+    "C20为蓝牙TX，D20为蓝牙RX；U15为当前115200诊断UART，不要与笛D14恒高输出或IMU串口混淆。",
+    "DDR CK和DQS的IO_LOC一行列出正负两球，负端由差分IO绑定；不是漏配ddr_ck_n/ddr_dqs_n。"
+  ],
+  "source_build": {
+    "environment": "最终FS标明Gowin EDA V1.9.12.03 (64-bit), build86715；目标GW5AST-LV138PG484AC1/I0。需要Gowin正常安装的器件/原语库，不依赖交付中的测试软件。",
+    "required": [
+      "TangMusic_A_KeyFix_D215.gprj",
+      "src/（完整含Gowin_PLL和ddr3_memory_interface子目录）",
+      "assets/",
+      "constraints/",
+      "synthesize_board_a.tcl",
+      "route_board_a.tcl",
+      "impl/TangMusic_A_KeyFix_D215_process_config.json"
+    ],
+    "not_build_dependencies": [
+      "tests/",
+      "tools/",
+      "reports/",
+      "*.gprj.user",
+      "既有impl/gwsynthesis、impl/pnr缓存"
+    ],
+    "workflow": [
+      "从A_D215目录打开GPRJ，核对器件、studio_board_a及0000D215。",
+      "运行synthesize_board_a.tcl进行综合，再运行route_board_a.tcl进行PnR；两脚本均cd到自身目录并使用相对工程路径。",
+      "综合产物位于impl/gwsynthesis，最终FS及Pin/Timing/Power报告位于impl/pnr。",
+      "检查当前报告和目标UserCode，再由用户用Gowin Programmer对正确板卡执行Flash流程；本次审计不执行这些操作。"
+    ],
+    "GUI_configuration": "必须原样保留唯一process_config.json；IncludePath为空、TclPre为空、增量构建关闭。不要为了精简工程而删除该文件。",
+    "absolute_path_comment": "DDR IP中的E:/Design_Tools/...只在源文件索引注释内，不是重建时要访问的外部源文件。",
+    "legacy_constraint": "constraints/instrument.cst是保留的历史约束；当前GPRJ使能studio_board_a.cst和studio_board_a.sdc。",
+    "file_counts": {
+      "src": 154,
+      "assets": 12,
+      "constraints": 3
+    },
+    "minimal_complete_engineering_file_count": 173,
+    "enabled_GPRJ_file_count": 113,
+    "GPRJ_enabled_files": [
+      "src/ws2812_keyboard_guide.sv",
+      "src/studio_sustain_pedal.sv",
+      "src/studio_sustain_events.sv",
+      "src/studio_control_panel.sv",
+      "src/air_uart_rx.v",
+      "src/air_uart_tx.v",
+      "src/air_atk_imu901_parser.v",
+      "src/air_atk_imu901_config.v",
+      "src/air_drum_imu_core.v",
+      "src/air_drum_hit.v",
+      "src/air_drum_expression.v",
+      "src/air_drum_event_merge.v",
+      "src/air_drum_synth.v",
+      "src/air_drum_voice.v",
+      "src/air_drum_delay.v",
+      "src/air_drum_master_gain.v",
+      "src/instrument_air_drum.v",
+      "src/flute_adc.v",
+      "src/flute_keys.v",
+      "src/flute_fingering.v",
+      "src/flute_miso_filter.v",
+      "src/flute_breath.v",
+      "src/flute_audio_control.v",
+      "src/flute_voice.v",
+      "src/instrument_flute.v",
+      "src/matrix_scan.v",
+      "src/key_velocity.v",
+      "src/keyboard_scan_input.v",
+      "src/fx_sample_ram.v",
+      "src/piano_effects.v",
+      "src/audio_mixer_32.v",
+      "src/hdmi_tx.v",
+      "src/instrument_audio.v",
+      "src/instrument_guide.v",
+      "src/midi_keyboard_synth.v",
+      "src/midi_keyboard_synth_v2.v",
+      "src/midi_piano_voice.v",
+      "src/midi_state.v",
+      "src/piano_voice_v2.v",
+      "src/piano_wave_rom.v",
+      "src/pcm5102_i2s_tx.v",
+      "src/spectrum_analyzer_32.v",
+      "src/spectrum_coeff_rom.v",
+      "src/tmds_encoder.v",
+      "src/touch_report.v",
+      "src/uart_rx_8n1.v",
+      "src/ui_cdc_snapshot.v",
+      "src/ui_mask_events.v",
+      "src/ui_master_volume.v",
+      "src/ui_note_merge.v",
+      "src/ui_lissajous_capture.v",
+      "src/ui_scope_capture.v",
+      "src/usb_fs_phy.v",
+      "src/usb_fs_transaction.v",
+      "src/usb_pll.v",
+      "src/usb_touch_host.v",
+      "src/video_diagnostics.v",
+      "src/video_pll.v",
+      "src/video_timing.v",
+      "src/ws2812_matrix_32x8.v",
+      "src/ws2812_status.v",
+      "src/tmcp_minlink_core.sv",
+      "src/tmcp_uart_endpoint.sv",
+      "src/tmcp_sync_fifo.sv",
+      "src/flute_voice_select.v",
+      "src/drum_panel_envelopes.v",
+      "src/drum_ripple_pixel.v",
+      "src/ws2812_drum_panels.v",
+      "src/performance_telemetry.v",
+      "src/pll_init.v",
+      "src/piano_recorder.sv",
+      "src/record_ddr_bridge.sv",
+      "src/gowin_pll/gowin_pll.v",
+      "src/gowin_pll/gowin_pll_mod.v",
+      "src/ddr3_memory_interface/ddr3_memory_interface.v",
+      "src/studio_recorder.sv",
+      "src/studio_record_protocol.sv",
+      "src/studio_uart_router.sv",
+      "src/studio_controller.sv",
+      "src/studio_renderer.sv",
+      "src/studio_artwork.sv",
+      "src/studio_rows.v",
+      "src/studio_tiles.v",
+      "src/studio_pixels.v",
+      "src/studio_palettes.v",
+      "src/studio_font.v",
+      "src/studio_asset_stream.v",
+      "src/studio_asset_loader.sv",
+      "src/studio_cache_ram.sv",
+      "src/studio_artwork_ddr.sv",
+      "src/studio_ddr_arbiter.sv",
+      "src/studio_scope_coordinate.sv",
+      "src/studio_u32_ge.sv",
+      "src/studio_audio_looper.sv",
+      "src/studio_score_store.sv",
+      "src/studio_keymap.v",
+      "src/studio_board_a.v",
+      "src/studio_net_frames.v",
+      "src/studio_display_link.v",
+      "src/studio_remote_io.v",
+      "src/GMII_pll.v",
+      "src/mdio_master.v",
+      "src/phy_config.v",
+      "src/rgmii_byte_align.v",
+      "constraints/studio_board_a.cst",
+      "constraints/studio_board_a.sdc",
+      "src/audio_sample_clock.v",
+      "src/score_cues_fast.v",
+      "src/studio_drum_transport.sv",
+      "src/piano_shared_mix.sv",
+      "src/studio_rx_status_uart.v",
+      "src/studio_flute_key_probe.v",
+      "src/studio_piano_probe_status.v"
+    ]
+  },
+  "pnr_and_timing": {
+    "current_status": "当前交付目录已有完成的PnR、bitstream及报告，不再沿用最早源码候选README中的“未PnR/不含FS”作为当前状态。",
+    "finished_local_time": "2026-11-02 23:12:47",
+    "timing_report_created_local_time": "2026-11-02 23:12:46",
+    "setup_violated_endpoints": 2090,
+    "hold_violated_endpoints": 0,
+    "clk_50m_reported_Fmax_MHz": 42.701,
+    "warnings": [
+      "PR1014: clk_d使用generic routing clock resource",
+      "PR1014: rx_clk_d使用generic routing clock resource"
+    ],
+    "wording": "可确认PnR与位流生成完成；当前STA报告仍有setup违例，不能写“时序已通过/已闭合”。这些是当前构建报告限制，不等同于断言当前演奏功能失败。Flash成功也不替代setup/hold验收。",
+    "evidence_files": [
+      "impl/pnr/TangMusic_A_KeyFix_D215.log",
+      "impl/pnr/TangMusic_A_KeyFix_D215.rpt.txt",
+      "impl/pnr/TangMusic_A_KeyFix_D215.tr.html",
+      "impl/pnr/TangMusic_A_KeyFix_D215_tr_content.html",
+      "impl/pnr/TangMusic_A_KeyFix_D215_tr_cata.html"
+    ]
+  },
+  "flash_success": {
+    "summary": "已有Flash编程与校验成功、显式Reprogram from Flash、随后读取ID/UserCode/Status成功的日志。",
+    "device_id": "0001081B",
+    "usercode": "0000D215",
+    "status_code": "00026020",
+    "successful_cable_clock_MHz": 1.1,
+    "done": true,
+    "configuration_error_bits_0_to_3": 0,
+    "auto_boot_failure_flags": false,
+    "finished_utc": "2026-11-02T15:42:36.602629+00:00",
+    "evidence_paths": [
+      "output/a-flash-d215-20261102/final_result.json",
+      "output/a-flash-d215-20261102/retry-low-clock/flash_program_verify.log",
+      "output/a-flash-d215-20261102/reprogram_from_flash.log",
+      "output/a-flash-d215-20261102/final_boot_read_codes.log"
+    ],
+    "boundary": "成功后的物理断电重启未在这组记录中执行；已验证的是显式从Flash重载。初次失败和早期状态值比较纠正属于历史过程，不应复制成当前失败结论，也不需将失败软件打入交付包。",
+    "FS_source_matches_current_sha256": true,
+    "successful_A_record_fields": {
+      "passed": true,
+      "version": "A D215",
+      "device": "GW5AST-138C",
+      "flash_program_and_verify": true,
+      "explicit_flash_reload": true,
+      "reloaded_usercode": "0000D215",
+      "status_code": "00026020",
+      "done_final": true,
+      "configuration_error_bits_0_to_3": 0,
+      "auto_boot_1st_fail": false,
+      "auto_boot_2nd_fail": false,
+      "source_sha256": "e222df1028f30b38fa79a5296c9da6554220f635b2dee7f6f361170bb82ff05c",
+      "finished_utc": "2026-11-02T15:42:36.602629+00:00",
+      "physical_power_cycle_after_success": "not performed; explicit Reprogram from Flash verified",
+      "status_reference": "Installed official UG704-1.0.7E table 5-1 (printed65 / PDF73)"
+    }
+  },
+  "recommended_manual_summary": "A D215负责实体乐器采集、钢琴/笛音源、远端鼓PCM回收、最终混音、录音/蓝牙与I2S。当前确认FS的UserCode为D215，已完成PnR、Flash编程校验及显式Flash重载；保留三路20ns设计脉冲探针。D215恢复32路钢琴独立PCM及原加法树，保留group0前7键禁用的原音区规则。当前STA仍有setup违例，不能把位流生成或Flash成功写成时序闭合。",
+  "audited_utc": "2026-11-03T09:21:51.711458+00:00",
+  "source_snapshot_sha256": {
+    "assets/studio_asset_stream.hex": "475077d00a68523b3205aa696722e81bdd83b84bff5e3fdd1e90c907f123d863",
+    "assets/studio_ddr_lz4.bin": "68286d40ae0f77e85ace8ea797f1382852b7a49eccb8af964656635ded4a143a",
+    "assets/studio_ddr_raw.bin": "4666fb19d994b30dc1a698f99de62ad7487da13a4401f4072924a5888f4e6d79",
+    "assets/studio_font.hex": "18870471288164890b3534b1b3e5cefc5116f54d90b1c0dec943b2bb4f16c48b",
+    "assets/studio_palettes.hex": "2a34c07631e7fa86a310c2a96351eef85d1999890b1ee74eb7d30117b19a18b0",
+    "assets/studio_palettes.json": "68c06583e4e00facec3c2c357f225403c2fd645a3ec36c87da5928abe43185ee",
+    "assets/studio_pixels.hex": "83708fd2c979f2e0e2ad315a4f787c09aac6bbe35a65aaa15319acc6b2779de7",
+    "assets/studio_pixels.json": "0898562cb56ce7a68a6a7821256fb1147393e7ace29007bcf97713bfc7dc7255",
+    "assets/studio_rows.hex": "a54e3c95c5e0f416b5534230b3feb62ffd13d4bd8caccb564e97612551332c3d",
+    "assets/studio_rows.json": "9508db45819150dd997b9e6c23fd41d8fb3656c1172196d74d64e6c30880fa01",
+    "assets/studio_tiles.hex": "54424fa8ba4db40061b24a732a3e7dd2b0753a2c5f800f3be57c244c35dfc98b",
+    "assets/studio_tiles.json": "aa2f1b7365479ff03993c154bc0e813f2b6f0543077dcfff03f584a98ce89a6b",
+    "constraints/instrument.cst": "c0d2bac338151d204d97a91e8a663ba5b316920b779b6f0a8b77f8e2fa64a5ec",
+    "constraints/studio_board_a.cst": "9bea5805316d735933b86841514d2921a65585c54c7c6b8fd852aa9ffa58ef6e",
+    "constraints/studio_board_a.sdc": "2abf899eea7a4d2bbdab9ec2533fb42d760078004a9992b0fb94e5765fa97e3b",
+    "impl/TangMusic_A_KeyFix_D215_process_config.json": "3581d2cd97cbd468c293d27ced73de8d20835103966ecaebf53957ab97e5511d",
+    "route_board_a.tcl": "67cbdf9dcd2c5f41b570d4bc5617dc35643bd2edadce48adb0c358823967b136",
+    "src/air_atk_imu901_config.v": "122f2210a8519795ea27a41dc6988631b8f23b06144986227a83b54b33fb2ed5",
+    "src/air_atk_imu901_parser.v": "54e301372dde9f2a706b0659e3dea0f7bd139416356a38d8e3d9e16283b863ce",
+    "src/air_drum_delay.v": "23d8307eb155c08c11d33c611f0c12250d46e223885f0e8a8efa33034e2a9f73",
+    "src/air_drum_event_merge.v": "47447d636a487c7f8982716dafd19fc641ee2be60e3013fad12c39f83a169136",
+    "src/air_drum_expression.v": "e58c246b2b2349f92b393d47575f8be3808a3427d89eaa0a0d94df5ce3a73087",
+    "src/air_drum_hit.v": "a9076e1903f27edf7ad73e2038779743005282a2346414f2c100685eb3c233cc",
+    "src/air_drum_imu_core.v": "855ed3f94c366c5fba0f3f3d571843e1cd47fa9e4260ee05b2ca169c2948977f",
+    "src/air_drum_master_gain.v": "c33b791d90e7945423e52c4f08f7e809e9e335012c4bc1e578f5fc1c473e999a",
+    "src/air_drum_synth.v": "c4a87088c5a75427a4b925d5b58c1be1e2965e0bcd9b576b272b9387261daa92",
+    "src/air_drum_voice.v": "165f3a2e8da237cc78b0eae7a3acfcb867ea1dcf4efe9f3e0ec0cca674aad742",
+    "src/air_uart_rx.v": "8480d2719fe3354ab9a73784b0f819dc703a19d2add517c5691af7f35ff656c2",
+    "src/air_uart_tx.v": "4cb5636be66038dd1cd50d4391159263172d1947682977e9fb18eb5b00a38de5",
+    "src/audio_mixer_32.v": "9c2394c1a22054f1e4ea1256f46c4d2d3ca90ae362f9aaacfb6780870c8533dc",
+    "src/audio_sample_clock.v": "99b8863025ff255b05df00f248c86e676fce9413092417fa169e620ad196d971",
+    "src/ddr3_memory_interface/ddr3_memory_interface.ipc": "50f685396379ddd669464df716ae3a3872a7b2bd9272394a22c8303c5603d1f5",
+    "src/ddr3_memory_interface/ddr3_memory_interface.v": "d7cae5a16467ca35ee3f95411537344ae3702e1dba86a06571530e3dd0180c57",
+    "src/ddr3_memory_interface/ddr3_memory_interface_tmp.v": "aa54ba0024ee53054ab5df10c12d4523e685a6f8b5b415ea330bbc9ce8959bbe",
+    "src/drum_panel_envelopes.v": "91ba089e0a50f71ceaf0e2ff2f6f52b7d9170f647aeab3a8e178916afb312246",
+    "src/drum_ripple_pixel.v": "89b68b73f485b4297cb960fd88e58f63448bc0c3753d26f43292d8ed409298e4",
+    "src/flute_adc.v": "7012de419f9505404944aa6228c118113c0a83eb0aa7ab30743bbc746247ef62",
+    "src/flute_audio_control.v": "e74eb0d922f260a7175864a76c7c6090ee521923469a22f8b1086e97d5c6ee60",
+    "src/flute_breath.v": "f5d342aba6703d954764257061fb61538c2604378dcc6ef796aa5490cf22639c",
+    "src/flute_fingering.v": "7902236b6af9d882ea0ce3168278b4f0a8bca1e483f7d863681cde46c4e82ca7",
+    "src/flute_keys.v": "f39aa3c4f73e725ab5ed33d5fc136b469003d36c9f3fbc0918d918ba3079f3a7",
+    "src/flute_miso_filter.v": "cfb3c7ed6ddd437cd48ec92fc71a69a38dcf3a95af48a76261082f542affbca4",
+    "src/flute_telemetry.v": "0103c5d4f5048d2c4f9cb9b762567107964c4457694c357d531d1dbc9f8d44c6",
+    "src/flute_uart_tx.v": "fbd3dd71a807827129643a69ce0aa371c634b41a74aac1e66fdcb28da3e8d114",
+    "src/flute_voice.v": "cf0e833a21b91844795d9f96e86f93e9860af27ae4fa7e6656d0be328d45d624",
+    "src/flute_voice_select.v": "65e3603ceb88bc6b34568236b2778beac31f1edafc5740c8d371f67cce62ca1c",
+    "src/fx_audio_params.vh": "9e58ea6cbe876d4dca30936687a96ea0a272c7f197ba26c43326ce5bb72ba85a",
+    "src/fx_sample_ram.v": "58f8581042b17a0c0407f52db8bce684de5217436061f1865c701f37b47e9830",
+    "src/GMII_pll.v": "32f1b54efc48680b13bbe09e0a8acc52a8fcebed9801c3db02db15576a45d471",
+    "src/gowin_pll/gowin_pll.ipc": "02972f88241779c6488dd481b81fc40a454526a03e7c6e158f1271738c649705",
+    "src/gowin_pll/gowin_pll.v": "982ca6387f42086e88b4c858490eb00954a80a3284e0f07d959311d0975d7536",
+    "src/gowin_pll/gowin_pll_mod.v": "07398632b56749dbe52f6e5d739a526c7ca5e71c4060c7d062a64dada6e1a953",
+    "src/gowin_pll/gowin_pll_mod_tmp.v": "2ec696b4249642d3eada920c1eb847759008da0d33ce6cd5c281238d945987cc",
+    "src/gowin_pll/gowin_pll_tmp.v": "9a2e5f458010e32b6c2ee656c9da53fe7579982db69871e1f9b9018cea4df4df",
+    "src/guide_song_rom.vh": "44f559eea6ff6fa0055863f666337a4685edfc55807081d11198b6e7d766bbe0",
+    "src/hdmi_tx.v": "414caa6095b90e2e839e7799d8246f0a1e70edda9bfa3851b2f0ca1fba756c1f",
+    "src/instrument_air_drum.v": "921bf121e3e2f64cf46020d19da2131f4f8df194273fe2119c59dbc109d8f27e",
+    "src/instrument_audio.v": "a5c1b74140667c623c3a61068ed2856e424d56483d71015f871ba2f7cdc4bcbb",
+    "src/instrument_flute.v": "5ad9d73cfa4d6805337808d531112b1a864a2f6788c2c559aaee4d0acbe15d6f",
+    "src/instrument_guide.v": "a42c020c64dc6c59fbdb0243bd305e0512c51d2fe0f96d07af0dc1c31138479a",
+    "src/instrument_top.v": "a394b4c5c17db200ffb552530bd676273008e43428706c8dbb83a13daec50854",
+    "src/key_velocity.v": "62d46524c5f08f96c60f9b6735451453b34f87937b1b752e7cc0c7e8907e7c22",
+    "src/key_velocity_curve.vh": "eaa2f29c2d19e9c48b62b7f112cbc25cffb55dd65b6e3c65968fb8d7ed000a71",
+    "src/keyboard_scan_input.v": "d74d91f408ded5b73379f78f45f6b55ad9632b660e927d382f75e22d7d40a350",
+    "src/matrix_scan.v": "0ec9ccec8862061a0c80eddb39cb6ee2b91ac49b79dc7c6952543928f14fe89a",
+    "src/mdio_master.v": "cb170e818ac5d34ce09732b5939f0649c385e19c82b55a59d4c3ccc40683ce47",
+    "src/midi_event_decoder.v": "627795e554372e7ab9858e5ccf74bb86bb483bc1b616b76fbd99c7b1270aeb9f",
+    "src/midi_keyboard_synth.v": "99002f6131b1ce11b2d6c362cafcc8b4c3f8c7e688b679acb5bb2d0ba6803c62",
+    "src/midi_keyboard_synth_v2.v": "f938a572457ef076b6d5e92d01d59bc5750d4e0399a4e5129354458763eab8a3",
+    "src/midi_piano_voice.v": "c672b804315611c40bf00e6141e36f7bed852675687c4a101e22633fb66ff12b",
+    "src/midi_state.v": "319d87a7df25f156ed040b8aa137f92600042c057573cacf684e9c8e9c40d5a9",
+    "src/midi_three_key_synth.v": "e61fa7e9595b5f3c7308ab58d84633d4fce0a71ed026acac3da7e3ffff664f3b",
+    "src/pcm5102_i2s_tx.v": "55b46c5f393ff6d9df923ca3d3476de1f067b486359f303c4f6484f2232e3c63",
+    "src/performance_telemetry.v": "55feec7d67bd8ebc90c75aae3304525abd99e5ed18049b8a450b93dd5c5b93eb",
+    "src/phy_config.v": "6292c5982c1590a52907c4e88e0f83bf7b4ba2e13db6d8482e0d59e568b4e3fe",
+    "src/piano_effects.v": "e06c95e73906a7193c6f782b65e8fcec8061b3e2f82dfb932af219f2c2e4f06f",
+    "src/piano_recorder.sv": "92b77d1d335db15599c65aa75ec93f388e3048c04b3ff788556387d5877c0b0c",
+    "src/piano_shared_mix.sv": "623fffef78246c6bece3354e26f0aadace02113859d1cf9eb9d323babaa3f96c",
+    "src/piano_voice_v2.v": "d80dc7abff666c2d8829992fda5193dca3239e34278b7eac238efab6c61cdd9b",
+    "src/piano_wave_rom.v": "a8fd98fdc41f64f15f4b07d45646fa115b1d681f557e5b5eee07ece4e4132890",
+    "src/pll_init.v": "502436115e507453e2c139a073f5b56484421311ef57088ce1a16140347957f5",
+    "src/pt8211_tx.v": "9876a05d32f0b4e10fd81b3a011251adcad515a9f6749dc5e1747a2736431eec",
+    "src/record_ddr_bridge.sv": "10eda11ad7aa3550df028dcc5a80dad374f3e4af6867fa3613b6501acadc873d",
+    "src/rgmii_byte_align.v": "16b944df8dce7b6274814e05f2d9dd976e72d346ea7bb520c11be1615fa3357f",
+    "src/score_cues_fast.v": "cbb04dbf6d6da41ea517c41c0bc6a00e5ee141a03b19af57564f0a3e43f88a2b",
+    "src/spectrum_analyzer_32.v": "009dae596f995db7d14de00205dafd54c5604d6b02e8da92a0347af95abb78f6",
+    "src/spectrum_coeff_rom.v": "173fc4b16d7ee07c4a6a21c93db69448ec91049f4b95ed6161f5208a4ef86316",
+    "src/spi_tx_byte.v": "69eae510346c59d8f7cdd7cbf186e96933334a7f8057d7d9417e77d9a2486225",
+    "src/st7789_status.v": "ece140349ee0e5db58d4e2d344e4222f67371251cfff21072f4220ccbd7c51ce",
+    "src/studio_artwork.sv": "9b2c7d9d5147efe44ec52c8d45377afe1d15854ac55a525f9487481991b7f75b",
+    "src/studio_artwork_ddr.sv": "2eababeb53e0d5fbc80f5ec7ac9366f7641db13ffd1dff0e80953ac976be5aaa",
+    "src/studio_asset_config.vh": "6f05128199f10a4d0e5fae326b2a1f9eb0d61d6bf05cf78affd7a2230d8194ef",
+    "src/studio_asset_loader.sv": "9aac6598e883858b42fbb57c7245ce60cd5e469d7ec8f223052d9a5b29b15703",
+    "src/studio_asset_stream.v": "df9ed76fe06d67ee86188908084e225adc44071cbb30021a748f44a75172e7cc",
+    "src/studio_audio_looper.sv": "0c86559befc1770e20621f46a691afeb4365806892af829007fc2525de0a85a1",
+    "src/studio_board_a.v": "c6d1655c7f967def6883961e9a1fd8f5cb2be0993fd1bf525c5f4c6df18d699f",
+    "src/studio_cache_ram.sv": "fd9e453b56c27fda47da39b8501946da209d4ff9a012dd757f4179c25f759d42",
+    "src/studio_colors.vh": "f086339333e5c6de6d08fb6620c1eebb170067e331ae5b5d45f78b5c4349a008",
+    "src/studio_control_panel.sv": "7b03b931a839804220c44c0bb3efa3275b05a323f260ece4d2b74c8cb16759a4",
+    "src/studio_controller.sv": "74cda909130d81d8dcf6d9bfa4a324da7798e64d3bf1ce93ead81f64573875d5",
+    "src/studio_ddr_arbiter.sv": "22509c005c693869c3283e9a0f699c405ae9c0ceceb2135428f5274a6769f3a5",
+    "src/studio_display_link.v": "5eb022692ac393e62fa88a0308f0f0cbe39b339c5e8cb68e870c46fd24527e2b",
+    "src/studio_display_lookup.vh": "59580e5050b93f6e826a4f4af675ce80efec5865864fb4b7f50c34e69326a740",
+    "src/studio_drum_transport.sv": "fce634df515b655f590d80a207b39b4091a1abf93c4252857e0b1507c99c2233",
+    "src/studio_flute_key_probe.v": "4f314080101c72964b60d21184d10cb93819afa00ead8faee95c3b3dd6c4bc57",
+    "src/studio_font.v": "d3994121b1939cf4164deef700b4f1e8ea02cc689d0c50111990afbc5c3313af",
+    "src/studio_keymap.v": "13b3ae00349bd994efdbf1ea51b156a53eee089342dd2238b7e4698ef45c38c2",
+    "src/studio_keys.vh": "b6930ca1052dcc2e29239d2b634f53fab6cade5a76deb106a12c9fbec771196e",
+    "src/studio_net_frames.v": "209a9f260d2e961d99bf22d2b511b8bf6d4c9c2c5917d8f3502ce8eb622926df",
+    "src/studio_net_protocol.vh": "ec7e3f8bc0172deed5fd1871e274a1b87aa387abc18674c341ee38bb4338e9e8",
+    "src/studio_palettes.v": "7619334928bc2bffdfc871e76a8ee8d9c008f6d7633f3478aa854bc0e67088fb",
+    "src/studio_piano_probe_status.v": "60aa0386f310bc56cc4867124c5ba2ae200ac7b0ee05f21a21a5cd5c707b992b",
+    "src/studio_pixels.v": "7f560bd1afd7406c581225c328f1ea993bf8c8f468178f723fa5316bfcce9d44",
+    "src/studio_record_protocol.sv": "55aa4655416ad43174f511fe72ddab9273e59e9547f5d7cc10d9746bb3ec5e64",
+    "src/studio_recorder.sv": "856722b66c2e939a7a2be1ffc139459cef3f9d14f4b6e8f00b0128687e500329",
+    "src/studio_remote_io.v": "f3a615f4069db418cfd0abe7937aebb9ec15a1e38fc7ce93ca36c3630feff03c",
+    "src/studio_renderer.sv": "5fff81f6cea9ef04748c84da1505008310338c6b33f936ed8fde24f258f1910f",
+    "src/studio_rows.v": "aed7ec5a0084ab5391581ed38249a6f2ac96692d8ae6c0a05f523bb2209520ba",
+    "src/studio_rx_status_uart.v": "c086f99abfecccd12431e8b3b39e3f33ed56ef5aedd92eac27225b4f527a0466",
+    "src/studio_scope_coordinate.sv": "4e17971786399d91f67c4f51072500b9b712a31bab2713572f7618a241acad38",
+    "src/studio_score_store.sv": "40e63af8379a312b24aabb674c3f62669592dd2ef765744ababa70f77553ec16",
+    "src/studio_slider.vh": "ad3da819aeb6a49d417ddb45a99d2aa2a8a43bcd750b00eccc20e763460cdaf1",
+    "src/studio_sustain_events.sv": "acb59437c0e2fc3a683e78393c7420e2eb13d7b844e91338dbb3d6d064c6afa6",
+    "src/studio_sustain_pedal.sv": "2366c74adfbc9c58a5aff8bf8eedfb3e7a8a0fa317f1b7d89d7f3d39e5f3c94f",
+    "src/studio_text.vh": "f5c614f58cad40e9327ff3f0cce1ed3a58a1d804d4db9b6c14f5f8d6d99e8534",
+    "src/studio_tiles.v": "a6f5c8ebbd2493cf0da20733f6afbe06da2c33179a32369c8dfb2c9d8555400c",
+    "src/studio_u32_ge.sv": "f5280c5aed75e8f55062672e39119e75420a84805b21b5d3dc0806b5829f4200",
+    "src/studio_uart_router.sv": "3b9567899d93a1236cfa45eb1ef90d81e5933940d5bba04967dbb8a8a65b0dd8",
+    "src/tft_font_rom.v": "0759ef5699c72e00aaca76fa74a64ca3322d9948f9386c690db14f2c1140b213",
+    "src/tft_status_pixels.v": "b16cf286048a2026664050f799008362f9d278ae082d388f4ad6f5cd734e7c3c",
+    "src/tmcp_link_badge.sv": "d2c54447674cba8cf55909351462949f780da4e117a0df10fc3f352b90a9012a",
+    "src/tmcp_minlink_core.sv": "27f2d61540c4b09b8f2db5df56b5c12c25998f530b1513fcdf3029595b99d2b8",
+    "src/tmcp_sync_fifo.sv": "d638188b887100caa62d6ac061213c6fcd2cfe13bceee5dbe48e370c69111756",
+    "src/tmcp_uart_endpoint.sv": "e4fbe07ad42a4e6559544ef33e8baac2e357b53b3faba73e08761b3c568ad303",
+    "src/tmds_encoder.v": "db000779ff87835b03b71318df146b864899b8f1d09689c5f10cc66b4e9ce724",
+    "src/touch_report.v": "3f8ad74629f5a546147a56aaf78c9ca38ead7db0277f6e5e86a7849a60d1b4a0",
+    "src/uart_rx_8n1.v": "d15fb77a436598bb5162b7ef34863a6ac981409d46d0f47121441b4ef2dfba25",
+    "src/ui_artwork.v": "4a0fa12397b25c571e1a400a075d95026db752038ec391a1d9353d55f735ed1d",
+    "src/ui_cdc_snapshot.v": "36bc82467b5c395611304e9cc636881d2f9af1126af8e83bd7a1cf2769b6b29c",
+    "src/ui_controller.v": "17d2991450bc5f4f0e6d677887430a2ec75505778396938cb5b3eff9ab02723f",
+    "src/ui_controller_v2.v": "aecdafeed826a659bd13fb0a35a9708b82a3cede0c105d538e1b52eab6aeb8d0",
+    "src/ui_font_rom.v": "810b1bf928dd6df9cfe732e4b383cb23cd9bb83bcdc79a6aae0ebc49ae098b15",
+    "src/ui_fx_math.vh": "0027300a6f7118ba10163407a86b4076d0b93b8f4154ef3bcb35fbd48614ca8a",
+    "src/ui_layout.vh": "1ae146c83381263ace1034fbafc4a3493d202f9821791da25a55300dfcf26c5f",
+    "src/ui_lissajous_capture.v": "bcb42d9e4b99a7238a4770c5d851ba6de7123bfdaf02123d834c7c7b9f014e75",
+    "src/ui_mask_events.v": "18d6ff4240e1b86c9c0bd84b0463b1018c9c5a910204f9d7a5857caaefa318d1",
+    "src/ui_master_volume.v": "91c846a83f38152d289840f46f61a67d93c580b7699ad2e26697eff30b4b4bc0",
+    "src/ui_math.vh": "7cc5cac13f95b4162935a6cc062634c2899e76c72c42c12da3fadf14cdc4d841",
+    "src/ui_note_merge.v": "f5d4c675b75280126b38c1bf9c21a3c3d15b80da22f35342282d5d124a461fca",
+    "src/ui_pixels_rom.v": "e0be37730223d7e5d9618d3e6807757534fca7186c6e9d30ebc59856fc47dc13",
+    "src/ui_plot_math.vh": "fe095754b793c7b9408138362c362c154172cf0fad907f04e5534b8b5a229019",
+    "src/ui_renderer.v": "8b80f34ae0cb1a1c29de5cf4977589325d245c2fdf4d8416c1fa313c0a9a846d",
+    "src/ui_renderer_v2.v": "e8766e7072c674cf1509fc964c58c768cb254e27caa57e78d08d947ec8594bb5",
+    "src/ui_rows_rom.v": "51206210648aaba9eff4a036123bfb3841cde7ae1307dba5c8c8371f9c4245a3",
+    "src/ui_scope_capture.v": "1a9d12adf78484b80b340fe7a07881262c3fa8b870fb68a67a843685ce655df8",
+    "src/ui_tiles_rom.v": "4dbc434bf59256ae5086d4c6bbae8b33c358b64d9efe2da060c027843c2d9bfe",
+    "src/ui_v2_font.vh": "210cc9df21a0abb423fc7f7a8250e6e7fdfe96efe0166a42ca1920b4b3c71d9c",
+    "src/ui_v2_layout.vh": "63b6999c149a8daab4bad326bc493bb97db892d90dda5fb06aea5e2ff42f6169",
+    "src/ui_v2_render_map.vh": "e4c7b49c7b5e1c14b00821f1668435a0cf9a291fcefaa4e797dee5617f66f58e",
+    "src/ui_wind_layout.vh": "ed60cf327a0795d692b60697202d61b70fb3d00bc6f39f034baa6b8190a4eb4f",
+    "src/usb_fs_phy.v": "4c9bc22e960c75f1a3b9b5a75e03ba668dfbe1f72da78c758e12bdd82e3da04c",
+    "src/usb_fs_transaction.v": "a31fcb8ddc4f40674f6a6f06c535fc6a826361736f10412aab85526c5979cc11",
+    "src/usb_pll.v": "8a6bd2681d57dd00da2ca403de0ad3490697acd5d4d3226e60375deb4a573343",
+    "src/usb_touch_host.v": "8bb19b640e279991c9586a2c585cc7539c3caf1138ce94b73b22171390d56b4a",
+    "src/video_diagnostics.v": "db3eac86a4b87c4ebfd294db7ce48add5224029415e8f2648bbf3f76b361e891",
+    "src/video_pll.v": "d3db5ff4121ffea3210d0e310370347baf12d5ffcff66736568330ca00023d8f",
+    "src/video_timing.v": "241cc5b45d4aa91d4f65f0fa3c47772739e92a108960ad5fe3f793f641be25ad",
+    "src/ws2812_drum_panels.v": "492eae515373f97faa258890fd005cec6149cf18afd56e1e7397acc785dabc47",
+    "src/ws2812_keyboard_guide.sv": "7e9fa1d921809b05a87f59e37343805f51cbf4384c49c4779ce5ab789d41c43a",
+    "src/ws2812_matrix_32x8.v": "c453189d333b1f8172dbd9d356351cf583bb38bab42e81d619a015599f0ab269",
+    "src/ws2812_status.v": "bf0c75d900ef2a9a5e630a91cdc71d206b6831ba994f09012d595358fbb7edd0",
+    "synthesize_board_a.tcl": "4f967c07ec8dd809ab8378229ad060b11ca506a02b6adb3f5872013bad55ffe1",
+    "TangMusic_A_KeyFix_D215.gprj": "3cfcef04725e56a13cb4724666045a3fbe8a59f9a95e1aa072367afc692b7c51"
+  },
+  "all_CST_pins": [
+    {
+      "signal": "clk",
+      "pins": [
+        "V22"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 2
+    },
+    {
+      "signal": "key_n",
+      "pins": [
+        "AB13"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 8
+    },
+    {
+      "signal": "sustain_sig",
+      "pins": [
+        "B17"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 12
+    },
+    {
+      "signal": "piano_guide_din",
+      "pins": [
+        "B21"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "DOWN",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 15
+    },
+    {
+      "signal": "ENC1_A",
+      "pins": [
+        "R19"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 17
+    },
+    {
+      "signal": "ENC1_B",
+      "pins": [
+        "P19"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 18
+    },
+    {
+      "signal": "ENC2_A",
+      "pins": [
+        "U21"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 19
+    },
+    {
+      "signal": "ENC2_B",
+      "pins": [
+        "T21"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 20
+    },
+    {
+      "signal": "ENC3_A",
+      "pins": [
+        "R17"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 21
+    },
+    {
+      "signal": "ENC3_B",
+      "pins": [
+        "P16"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 22
+    },
+    {
+      "signal": "S1_N",
+      "pins": [
+        "T18"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 23
+    },
+    {
+      "signal": "S2_N",
+      "pins": [
+        "R18"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 24
+    },
+    {
+      "signal": "S3_N",
+      "pins": [
+        "W17"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 25
+    },
+    {
+      "signal": "S4_N",
+      "pins": [
+        "V17"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 26
+    },
+    {
+      "signal": "S5_N",
+      "pins": [
+        "W21"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 27
+    },
+    {
+      "signal": "fpc_drive[0]",
+      "pins": [
+        "AA18"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 40
+    },
+    {
+      "signal": "fpc_drive[1]",
+      "pins": [
+        "AB20"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 41
+    },
+    {
+      "signal": "fpc_drive[2]",
+      "pins": [
+        "AA21"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 42
+    },
+    {
+      "signal": "fpc_drive[3]",
+      "pins": [
+        "AB22"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 43
+    },
+    {
+      "signal": "fpc_drive[4]",
+      "pins": [
+        "Y22"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 44
+    },
+    {
+      "signal": "fpc_drive[5]",
+      "pins": [
+        "V20"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 45
+    },
+    {
+      "signal": "fpc_drive[6]",
+      "pins": [
+        "N14"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 46
+    },
+    {
+      "signal": "fpc_drive[7]",
+      "pins": [
+        "P17"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 47
+    },
+    {
+      "signal": "fpc_sense[0]",
+      "pins": [
+        "AB18"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 48
+    },
+    {
+      "signal": "fpc_sense[1]",
+      "pins": [
+        "AA19"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 49
+    },
+    {
+      "signal": "fpc_sense[2]",
+      "pins": [
+        "AA20"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 50
+    },
+    {
+      "signal": "fpc_sense[3]",
+      "pins": [
+        "AB21"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 51
+    },
+    {
+      "signal": "fpc_sense[4]",
+      "pins": [
+        "Y21"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 52
+    },
+    {
+      "signal": "fpc_sense[5]",
+      "pins": [
+        "U20"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 53
+    },
+    {
+      "signal": "fpc_sense[6]",
+      "pins": [
+        "N13"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 54
+    },
+    {
+      "signal": "fpc_sense[7]",
+      "pins": [
+        "N17"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 55
+    },
+    {
+      "signal": "rgb_led",
+      "pins": [
+        "J16"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 72
+    },
+    {
+      "signal": "i2s_bck",
+      "pins": [
+        "A21"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 75
+    },
+    {
+      "signal": "i2s_lrck",
+      "pins": [
+        "A16"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 77
+    },
+    {
+      "signal": "i2s_din",
+      "pins": [
+        "A20"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 79
+    },
+    {
+      "signal": "PA_EN",
+      "pins": [
+        "AB16"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 81
+    },
+    {
+      "signal": "matrix_din",
+      "pins": [
+        "A18"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "DOWN",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 87
+    },
+    {
+      "signal": "debug_uart_tx",
+      "pins": [
+        "U15"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "DRIVE": "8"
+      },
+      "CST_line": 97
+    },
+    {
+      "signal": "air_drum_key_n",
+      "pins": [
+        "Y12"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 104
+    },
+    {
+      "signal": "imu_rx",
+      "pins": [
+        "E17"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 106
+    },
+    {
+      "signal": "imu_tx",
+      "pins": [
+        "F16"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 108
+    },
+    {
+      "signal": "imu2_rx",
+      "pins": [
+        "F14"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 110
+    },
+    {
+      "signal": "imu2_tx",
+      "pins": [
+        "F13"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 112
+    },
+    {
+      "signal": "flute_keys_n[0]",
+      "pins": [
+        "E13"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 116
+    },
+    {
+      "signal": "flute_keys_n[1]",
+      "pins": [
+        "E14"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 118
+    },
+    {
+      "signal": "flute_keys_n[2]",
+      "pins": [
+        "C14"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 120
+    },
+    {
+      "signal": "flute_keys_n[3]",
+      "pins": [
+        "C15"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 122
+    },
+    {
+      "signal": "flute_keys_n[4]",
+      "pins": [
+        "C13"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 124
+    },
+    {
+      "signal": "flute_keys_n[5]",
+      "pins": [
+        "B13"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 126
+    },
+    {
+      "signal": "flute_keys_n[6]",
+      "pins": [
+        "A13"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 128
+    },
+    {
+      "signal": "flute_keys_n[7]",
+      "pins": [
+        "A14"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 130
+    },
+    {
+      "signal": "flute_spi_cs_n",
+      "pins": [
+        "B15"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 132
+    },
+    {
+      "signal": "flute_spi_clk",
+      "pins": [
+        "B16"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 134
+    },
+    {
+      "signal": "flute_spi_mosi",
+      "pins": [
+        "D15"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 136
+    },
+    {
+      "signal": "flute_spi_miso",
+      "pins": [
+        "D16"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "DOWN",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 138
+    },
+    {
+      "signal": "flute_uart_tx",
+      "pins": [
+        "D14"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 140
+    },
+    {
+      "signal": "bt_uart_rx",
+      "pins": [
+        "D20"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 144
+    },
+    {
+      "signal": "bt_uart_tx",
+      "pins": [
+        "C20"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 146
+    },
+    {
+      "signal": "bt_link_n",
+      "pins": [
+        "F15"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 148
+    },
+    {
+      "signal": "drum_led_din",
+      "pins": [
+        "D17"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "DOWN",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 152
+    },
+    {
+      "signal": "ddr_bank[2]",
+      "pins": [
+        "M6"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 156
+    },
+    {
+      "signal": "ddr_bank[1]",
+      "pins": [
+        "P2"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 158
+    },
+    {
+      "signal": "ddr_bank[0]",
+      "pins": [
+        "P5"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 160
+    },
+    {
+      "signal": "ddr_addr[14]",
+      "pins": [
+        "D1"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 162
+    },
+    {
+      "signal": "ddr_addr[13]",
+      "pins": [
+        "K1"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 164
+    },
+    {
+      "signal": "ddr_addr[12]",
+      "pins": [
+        "K4"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 166
+    },
+    {
+      "signal": "ddr_addr[11]",
+      "pins": [
+        "H3"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 168
+    },
+    {
+      "signal": "ddr_addr[10]",
+      "pins": [
+        "L1"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 170
+    },
+    {
+      "signal": "ddr_addr[9]",
+      "pins": [
+        "H5"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 172
+    },
+    {
+      "signal": "ddr_addr[8]",
+      "pins": [
+        "J5"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 174
+    },
+    {
+      "signal": "ddr_addr[7]",
+      "pins": [
+        "J1"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 176
+    },
+    {
+      "signal": "ddr_addr[6]",
+      "pins": [
+        "G3"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 178
+    },
+    {
+      "signal": "ddr_addr[5]",
+      "pins": [
+        "H2"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 180
+    },
+    {
+      "signal": "ddr_addr[4]",
+      "pins": [
+        "J2"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 182
+    },
+    {
+      "signal": "ddr_addr[3]",
+      "pins": [
+        "J4"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 184
+    },
+    {
+      "signal": "ddr_addr[2]",
+      "pins": [
+        "G2"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 186
+    },
+    {
+      "signal": "ddr_addr[1]",
+      "pins": [
+        "K2"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 188
+    },
+    {
+      "signal": "ddr_addr[0]",
+      "pins": [
+        "M1"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 190
+    },
+    {
+      "signal": "ddr_odt",
+      "pins": [
+        "M2"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 192
+    },
+    {
+      "signal": "ddr_cke",
+      "pins": [
+        "K6"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 194
+    },
+    {
+      "signal": "ddr_we",
+      "pins": [
+        "M5"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 196
+    },
+    {
+      "signal": "ddr_cas",
+      "pins": [
+        "L4"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 198
+    },
+    {
+      "signal": "ddr_ras",
+      "pins": [
+        "L5"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 200
+    },
+    {
+      "signal": "ddr_cs",
+      "pins": [
+        "P4"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 202
+    },
+    {
+      "signal": "ddr_reset_n",
+      "pins": [
+        "L6"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 204
+    },
+    {
+      "signal": "ddr_ck",
+      "pins": [
+        "L3",
+        "K3"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15D",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 206,
+      "paired_negative_signal": "ddr_ck_n"
+    },
+    {
+      "signal": "ddr_dm[3]",
+      "pins": [
+        "W1"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 208
+    },
+    {
+      "signal": "ddr_dm[2]",
+      "pins": [
+        "T6"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 210
+    },
+    {
+      "signal": "ddr_dm[1]",
+      "pins": [
+        "V7"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 212
+    },
+    {
+      "signal": "ddr_dm[0]",
+      "pins": [
+        "AA4"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 214
+    },
+    {
+      "signal": "ddr_dq[31]",
+      "pins": [
+        "Y2"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 216
+    },
+    {
+      "signal": "ddr_dq[30]",
+      "pins": [
+        "U1"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 218
+    },
+    {
+      "signal": "ddr_dq[29]",
+      "pins": [
+        "V2"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 220
+    },
+    {
+      "signal": "ddr_dq[28]",
+      "pins": [
+        "U2"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 222
+    },
+    {
+      "signal": "ddr_dq[27]",
+      "pins": [
+        "U3"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 224
+    },
+    {
+      "signal": "ddr_dq[26]",
+      "pins": [
+        "T1"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 226
+    },
+    {
+      "signal": "ddr_dq[25]",
+      "pins": [
+        "Y1"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 228
+    },
+    {
+      "signal": "ddr_dq[24]",
+      "pins": [
+        "W2"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 230
+    },
+    {
+      "signal": "ddr_dq[23]",
+      "pins": [
+        "T5"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 232
+    },
+    {
+      "signal": "ddr_dq[22]",
+      "pins": [
+        "V5"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 234
+    },
+    {
+      "signal": "ddr_dq[21]",
+      "pins": [
+        "T4"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 236
+    },
+    {
+      "signal": "ddr_dq[20]",
+      "pins": [
+        "Y6"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 238
+    },
+    {
+      "signal": "ddr_dq[19]",
+      "pins": [
+        "R4"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 240
+    },
+    {
+      "signal": "ddr_dq[18]",
+      "pins": [
+        "U6"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 242
+    },
+    {
+      "signal": "ddr_dq[17]",
+      "pins": [
+        "R6"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 244
+    },
+    {
+      "signal": "ddr_dq[16]",
+      "pins": [
+        "U5"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 246
+    },
+    {
+      "signal": "ddr_dq[15]",
+      "pins": [
+        "Y9"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 248
+    },
+    {
+      "signal": "ddr_dq[14]",
+      "pins": [
+        "AB6"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 250
+    },
+    {
+      "signal": "ddr_dq[13]",
+      "pins": [
+        "W9"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 252
+    },
+    {
+      "signal": "ddr_dq[12]",
+      "pins": [
+        "AB8"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 254
+    },
+    {
+      "signal": "ddr_dq[11]",
+      "pins": [
+        "Y7"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 256
+    },
+    {
+      "signal": "ddr_dq[10]",
+      "pins": [
+        "AB7"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 258
+    },
+    {
+      "signal": "ddr_dq[9]",
+      "pins": [
+        "Y8"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 260
+    },
+    {
+      "signal": "ddr_dq[8]",
+      "pins": [
+        "AA8"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 262
+    },
+    {
+      "signal": "ddr_dq[7]",
+      "pins": [
+        "AB1"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 264
+    },
+    {
+      "signal": "ddr_dq[6]",
+      "pins": [
+        "AB5"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 266
+    },
+    {
+      "signal": "ddr_dq[5]",
+      "pins": [
+        "AB2"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 268
+    },
+    {
+      "signal": "ddr_dq[4]",
+      "pins": [
+        "AA1"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 270
+    },
+    {
+      "signal": "ddr_dq[3]",
+      "pins": [
+        "V4"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 272
+    },
+    {
+      "signal": "ddr_dq[2]",
+      "pins": [
+        "AA5"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 274
+    },
+    {
+      "signal": "ddr_dq[1]",
+      "pins": [
+        "AB3"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 276
+    },
+    {
+      "signal": "ddr_dq[0]",
+      "pins": [
+        "Y4"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 278
+    },
+    {
+      "signal": "ddr_dqs[3]",
+      "pins": [
+        "R3",
+        "R2"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15D",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 280,
+      "paired_negative_signal": "ddr_dqs_n[3]"
+    },
+    {
+      "signal": "ddr_dqs[2]",
+      "pins": [
+        "W6",
+        "W5"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15D",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 282,
+      "paired_negative_signal": "ddr_dqs_n[2]"
+    },
+    {
+      "signal": "ddr_dqs[1]",
+      "pins": [
+        "V9",
+        "V8"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15D",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 284,
+      "paired_negative_signal": "ddr_dqs_n[1]"
+    },
+    {
+      "signal": "ddr_dqs[0]",
+      "pins": [
+        "Y3",
+        "AA3"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "SSTL15D",
+        "PULL_MODE": "NONE",
+        "DRIVE": "8",
+        "BANK_VCCIO": "1.5"
+      },
+      "CST_line": 286,
+      "paired_negative_signal": "ddr_dqs_n[0]"
+    },
+    {
+      "signal": "phy_clk",
+      "pins": [
+        "V19"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 294
+    },
+    {
+      "signal": "phy_rst_n",
+      "pins": [
+        "W20"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 296
+    },
+    {
+      "signal": "tx_clk",
+      "pins": [
+        "F20"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 298
+    },
+    {
+      "signal": "tx_ctl",
+      "pins": [
+        "F21"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 300
+    },
+    {
+      "signal": "txd[0]",
+      "pins": [
+        "D21"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 302
+    },
+    {
+      "signal": "txd[1]",
+      "pins": [
+        "E21"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 304
+    },
+    {
+      "signal": "txd[2]",
+      "pins": [
+        "D22"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 306
+    },
+    {
+      "signal": "txd[3]",
+      "pins": [
+        "E22"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 308
+    },
+    {
+      "signal": "rx_clk",
+      "pins": [
+        "G21"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 310
+    },
+    {
+      "signal": "rx_ctl",
+      "pins": [
+        "G22"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 312
+    },
+    {
+      "signal": "rxd[0]",
+      "pins": [
+        "F18"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 314
+    },
+    {
+      "signal": "rxd[1]",
+      "pins": [
+        "E18"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 316
+    },
+    {
+      "signal": "rxd[2]",
+      "pins": [
+        "C22"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 318
+    },
+    {
+      "signal": "rxd[3]",
+      "pins": [
+        "B22"
+      ],
+      "direction": "input",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 320
+    },
+    {
+      "signal": "phy_mdc",
+      "pins": [
+        "V18"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "NONE"
+      },
+      "CST_line": 323
+    },
+    {
+      "signal": "phy_mdio",
+      "pins": [
+        "U22"
+      ],
+      "direction": "inout",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "UP"
+      },
+      "CST_line": 325
+    },
+    {
+      "signal": "piano_scan_probe",
+      "pins": [
+        "C18"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "DOWN",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 331
+    },
+    {
+      "signal": "flute_key_probe",
+      "pins": [
+        "D19"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "DOWN",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 333
+    },
+    {
+      "signal": "drum_hit_probe",
+      "pins": [
+        "C19"
+      ],
+      "direction": "output",
+      "IO_PORT": {
+        "IO_TYPE": "LVCMOS33",
+        "PULL_MODE": "DOWN",
+        "DRIVE": "8",
+        "BANK_VCCIO": "3.3"
+      },
+      "CST_line": 335
+    }
+  ],
+  "grouped_pins": {
+    "system": {
+      "clk": {
+        "signal": "clk",
+        "pins": [
+          "V22"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 2
+      },
+      "key_n": {
+        "signal": "key_n",
+        "pins": [
+          "AB13"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 8
+      }
+    },
+    "control_panel": {
+      "ENC1_A": {
+        "signal": "ENC1_A",
+        "pins": [
+          "R19"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 17
+      },
+      "ENC1_B": {
+        "signal": "ENC1_B",
+        "pins": [
+          "P19"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 18
+      },
+      "ENC2_A": {
+        "signal": "ENC2_A",
+        "pins": [
+          "U21"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 19
+      },
+      "ENC2_B": {
+        "signal": "ENC2_B",
+        "pins": [
+          "T21"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 20
+      },
+      "ENC3_A": {
+        "signal": "ENC3_A",
+        "pins": [
+          "R17"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 21
+      },
+      "ENC3_B": {
+        "signal": "ENC3_B",
+        "pins": [
+          "P16"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 22
+      },
+      "S1_N": {
+        "signal": "S1_N",
+        "pins": [
+          "T18"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 23
+      },
+      "S2_N": {
+        "signal": "S2_N",
+        "pins": [
+          "R18"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 24
+      },
+      "S3_N": {
+        "signal": "S3_N",
+        "pins": [
+          "W17"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 25
+      },
+      "S4_N": {
+        "signal": "S4_N",
+        "pins": [
+          "V17"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 26
+      },
+      "S5_N": {
+        "signal": "S5_N",
+        "pins": [
+          "W21"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 27
+      },
+      "sustain_sig": {
+        "signal": "sustain_sig",
+        "pins": [
+          "B17"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 12
+      }
+    },
+    "keyboard_matrix": {
+      "fpc_drive[0]": {
+        "signal": "fpc_drive[0]",
+        "pins": [
+          "AA18"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 40
+      },
+      "fpc_drive[1]": {
+        "signal": "fpc_drive[1]",
+        "pins": [
+          "AB20"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 41
+      },
+      "fpc_drive[2]": {
+        "signal": "fpc_drive[2]",
+        "pins": [
+          "AA21"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 42
+      },
+      "fpc_drive[3]": {
+        "signal": "fpc_drive[3]",
+        "pins": [
+          "AB22"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 43
+      },
+      "fpc_drive[4]": {
+        "signal": "fpc_drive[4]",
+        "pins": [
+          "Y22"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 44
+      },
+      "fpc_drive[5]": {
+        "signal": "fpc_drive[5]",
+        "pins": [
+          "V20"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 45
+      },
+      "fpc_drive[6]": {
+        "signal": "fpc_drive[6]",
+        "pins": [
+          "N14"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 46
+      },
+      "fpc_drive[7]": {
+        "signal": "fpc_drive[7]",
+        "pins": [
+          "P17"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 47
+      },
+      "fpc_sense[0]": {
+        "signal": "fpc_sense[0]",
+        "pins": [
+          "AB18"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 48
+      },
+      "fpc_sense[1]": {
+        "signal": "fpc_sense[1]",
+        "pins": [
+          "AA19"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 49
+      },
+      "fpc_sense[2]": {
+        "signal": "fpc_sense[2]",
+        "pins": [
+          "AA20"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 50
+      },
+      "fpc_sense[3]": {
+        "signal": "fpc_sense[3]",
+        "pins": [
+          "AB21"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 51
+      },
+      "fpc_sense[4]": {
+        "signal": "fpc_sense[4]",
+        "pins": [
+          "Y21"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 52
+      },
+      "fpc_sense[5]": {
+        "signal": "fpc_sense[5]",
+        "pins": [
+          "U20"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 53
+      },
+      "fpc_sense[6]": {
+        "signal": "fpc_sense[6]",
+        "pins": [
+          "N13"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 54
+      },
+      "fpc_sense[7]": {
+        "signal": "fpc_sense[7]",
+        "pins": [
+          "N17"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 55
+      }
+    },
+    "flute": {
+      "flute_keys_n[0]": {
+        "signal": "flute_keys_n[0]",
+        "pins": [
+          "E13"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 116
+      },
+      "flute_keys_n[1]": {
+        "signal": "flute_keys_n[1]",
+        "pins": [
+          "E14"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 118
+      },
+      "flute_keys_n[2]": {
+        "signal": "flute_keys_n[2]",
+        "pins": [
+          "C14"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 120
+      },
+      "flute_keys_n[3]": {
+        "signal": "flute_keys_n[3]",
+        "pins": [
+          "C15"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 122
+      },
+      "flute_keys_n[4]": {
+        "signal": "flute_keys_n[4]",
+        "pins": [
+          "C13"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 124
+      },
+      "flute_keys_n[5]": {
+        "signal": "flute_keys_n[5]",
+        "pins": [
+          "B13"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 126
+      },
+      "flute_keys_n[6]": {
+        "signal": "flute_keys_n[6]",
+        "pins": [
+          "A13"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 128
+      },
+      "flute_keys_n[7]": {
+        "signal": "flute_keys_n[7]",
+        "pins": [
+          "A14"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 130
+      },
+      "flute_spi_cs_n": {
+        "signal": "flute_spi_cs_n",
+        "pins": [
+          "B15"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 132
+      },
+      "flute_spi_clk": {
+        "signal": "flute_spi_clk",
+        "pins": [
+          "B16"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 134
+      },
+      "flute_spi_mosi": {
+        "signal": "flute_spi_mosi",
+        "pins": [
+          "D15"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 136
+      },
+      "flute_spi_miso": {
+        "signal": "flute_spi_miso",
+        "pins": [
+          "D16"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "DOWN",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 138
+      },
+      "flute_uart_tx": {
+        "signal": "flute_uart_tx",
+        "pins": [
+          "D14"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 140
+      }
+    },
+    "drum": {
+      "air_drum_key_n": {
+        "signal": "air_drum_key_n",
+        "pins": [
+          "Y12"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 104
+      },
+      "imu_rx": {
+        "signal": "imu_rx",
+        "pins": [
+          "E17"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 106
+      },
+      "imu_tx": {
+        "signal": "imu_tx",
+        "pins": [
+          "F16"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 108
+      },
+      "imu2_rx": {
+        "signal": "imu2_rx",
+        "pins": [
+          "F14"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 110
+      },
+      "imu2_tx": {
+        "signal": "imu2_tx",
+        "pins": [
+          "F13"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 112
+      }
+    },
+    "probes": {
+      "piano_scan_probe": {
+        "signal": "piano_scan_probe",
+        "pins": [
+          "C18"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "DOWN",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 331
+      },
+      "flute_key_probe": {
+        "signal": "flute_key_probe",
+        "pins": [
+          "D19"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "DOWN",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 333
+      },
+      "drum_hit_probe": {
+        "signal": "drum_hit_probe",
+        "pins": [
+          "C19"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "DOWN",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 335
+      }
+    },
+    "audio": {
+      "i2s_bck": {
+        "signal": "i2s_bck",
+        "pins": [
+          "A21"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 75
+      },
+      "i2s_lrck": {
+        "signal": "i2s_lrck",
+        "pins": [
+          "A16"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 77
+      },
+      "i2s_din": {
+        "signal": "i2s_din",
+        "pins": [
+          "A20"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 79
+      },
+      "PA_EN": {
+        "signal": "PA_EN",
+        "pins": [
+          "AB16"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 81
+      }
+    },
+    "Bluetooth": {
+      "bt_uart_rx": {
+        "signal": "bt_uart_rx",
+        "pins": [
+          "D20"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 144
+      },
+      "bt_uart_tx": {
+        "signal": "bt_uart_tx",
+        "pins": [
+          "C20"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 146
+      },
+      "bt_link_n": {
+        "signal": "bt_link_n",
+        "pins": [
+          "F15"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 148
+      }
+    },
+    "LED_outputs": {
+      "rgb_led": {
+        "signal": "rgb_led",
+        "pins": [
+          "J16"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 72
+      },
+      "matrix_din": {
+        "signal": "matrix_din",
+        "pins": [
+          "A18"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "DOWN",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 87
+      },
+      "drum_led_din": {
+        "signal": "drum_led_din",
+        "pins": [
+          "D17"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "DOWN",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 152
+      },
+      "piano_guide_din": {
+        "signal": "piano_guide_din",
+        "pins": [
+          "B21"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "DOWN",
+          "DRIVE": "8",
+          "BANK_VCCIO": "3.3"
+        },
+        "CST_line": 15
+      }
+    },
+    "diagnostic_UART": {
+      "debug_uart_tx": {
+        "signal": "debug_uart_tx",
+        "pins": [
+          "U15"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP",
+          "DRIVE": "8"
+        },
+        "CST_line": 97
+      }
+    },
+    "Ethernet": {
+      "phy_clk": {
+        "signal": "phy_clk",
+        "pins": [
+          "V19"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 294
+      },
+      "phy_rst_n": {
+        "signal": "phy_rst_n",
+        "pins": [
+          "W20"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 296
+      },
+      "tx_clk": {
+        "signal": "tx_clk",
+        "pins": [
+          "F20"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 298
+      },
+      "tx_ctl": {
+        "signal": "tx_ctl",
+        "pins": [
+          "F21"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 300
+      },
+      "txd[0]": {
+        "signal": "txd[0]",
+        "pins": [
+          "D21"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 302
+      },
+      "txd[1]": {
+        "signal": "txd[1]",
+        "pins": [
+          "E21"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 304
+      },
+      "txd[2]": {
+        "signal": "txd[2]",
+        "pins": [
+          "D22"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 306
+      },
+      "txd[3]": {
+        "signal": "txd[3]",
+        "pins": [
+          "E22"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 308
+      },
+      "rx_clk": {
+        "signal": "rx_clk",
+        "pins": [
+          "G21"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 310
+      },
+      "rx_ctl": {
+        "signal": "rx_ctl",
+        "pins": [
+          "G22"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 312
+      },
+      "rxd[0]": {
+        "signal": "rxd[0]",
+        "pins": [
+          "F18"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 314
+      },
+      "rxd[1]": {
+        "signal": "rxd[1]",
+        "pins": [
+          "E18"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 316
+      },
+      "rxd[2]": {
+        "signal": "rxd[2]",
+        "pins": [
+          "C22"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 318
+      },
+      "rxd[3]": {
+        "signal": "rxd[3]",
+        "pins": [
+          "B22"
+        ],
+        "direction": "input",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 320
+      },
+      "phy_mdc": {
+        "signal": "phy_mdc",
+        "pins": [
+          "V18"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "NONE"
+        },
+        "CST_line": 323
+      },
+      "phy_mdio": {
+        "signal": "phy_mdio",
+        "pins": [
+          "U22"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "LVCMOS33",
+          "PULL_MODE": "UP"
+        },
+        "CST_line": 325
+      }
+    },
+    "DDR": {
+      "ddr_bank[2]": {
+        "signal": "ddr_bank[2]",
+        "pins": [
+          "M6"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 156
+      },
+      "ddr_bank[1]": {
+        "signal": "ddr_bank[1]",
+        "pins": [
+          "P2"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 158
+      },
+      "ddr_bank[0]": {
+        "signal": "ddr_bank[0]",
+        "pins": [
+          "P5"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 160
+      },
+      "ddr_addr[14]": {
+        "signal": "ddr_addr[14]",
+        "pins": [
+          "D1"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 162
+      },
+      "ddr_addr[13]": {
+        "signal": "ddr_addr[13]",
+        "pins": [
+          "K1"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 164
+      },
+      "ddr_addr[12]": {
+        "signal": "ddr_addr[12]",
+        "pins": [
+          "K4"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 166
+      },
+      "ddr_addr[11]": {
+        "signal": "ddr_addr[11]",
+        "pins": [
+          "H3"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 168
+      },
+      "ddr_addr[10]": {
+        "signal": "ddr_addr[10]",
+        "pins": [
+          "L1"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 170
+      },
+      "ddr_addr[9]": {
+        "signal": "ddr_addr[9]",
+        "pins": [
+          "H5"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 172
+      },
+      "ddr_addr[8]": {
+        "signal": "ddr_addr[8]",
+        "pins": [
+          "J5"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 174
+      },
+      "ddr_addr[7]": {
+        "signal": "ddr_addr[7]",
+        "pins": [
+          "J1"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 176
+      },
+      "ddr_addr[6]": {
+        "signal": "ddr_addr[6]",
+        "pins": [
+          "G3"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 178
+      },
+      "ddr_addr[5]": {
+        "signal": "ddr_addr[5]",
+        "pins": [
+          "H2"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 180
+      },
+      "ddr_addr[4]": {
+        "signal": "ddr_addr[4]",
+        "pins": [
+          "J2"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 182
+      },
+      "ddr_addr[3]": {
+        "signal": "ddr_addr[3]",
+        "pins": [
+          "J4"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 184
+      },
+      "ddr_addr[2]": {
+        "signal": "ddr_addr[2]",
+        "pins": [
+          "G2"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 186
+      },
+      "ddr_addr[1]": {
+        "signal": "ddr_addr[1]",
+        "pins": [
+          "K2"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 188
+      },
+      "ddr_addr[0]": {
+        "signal": "ddr_addr[0]",
+        "pins": [
+          "M1"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 190
+      },
+      "ddr_odt": {
+        "signal": "ddr_odt",
+        "pins": [
+          "M2"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 192
+      },
+      "ddr_cke": {
+        "signal": "ddr_cke",
+        "pins": [
+          "K6"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 194
+      },
+      "ddr_we": {
+        "signal": "ddr_we",
+        "pins": [
+          "M5"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 196
+      },
+      "ddr_cas": {
+        "signal": "ddr_cas",
+        "pins": [
+          "L4"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 198
+      },
+      "ddr_ras": {
+        "signal": "ddr_ras",
+        "pins": [
+          "L5"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 200
+      },
+      "ddr_cs": {
+        "signal": "ddr_cs",
+        "pins": [
+          "P4"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 202
+      },
+      "ddr_reset_n": {
+        "signal": "ddr_reset_n",
+        "pins": [
+          "L6"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 204
+      },
+      "ddr_ck": {
+        "signal": "ddr_ck",
+        "pins": [
+          "L3",
+          "K3"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15D",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 206,
+        "paired_negative_signal": "ddr_ck_n"
+      },
+      "ddr_dm[3]": {
+        "signal": "ddr_dm[3]",
+        "pins": [
+          "W1"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 208
+      },
+      "ddr_dm[2]": {
+        "signal": "ddr_dm[2]",
+        "pins": [
+          "T6"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 210
+      },
+      "ddr_dm[1]": {
+        "signal": "ddr_dm[1]",
+        "pins": [
+          "V7"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 212
+      },
+      "ddr_dm[0]": {
+        "signal": "ddr_dm[0]",
+        "pins": [
+          "AA4"
+        ],
+        "direction": "output",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 214
+      },
+      "ddr_dq[31]": {
+        "signal": "ddr_dq[31]",
+        "pins": [
+          "Y2"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 216
+      },
+      "ddr_dq[30]": {
+        "signal": "ddr_dq[30]",
+        "pins": [
+          "U1"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 218
+      },
+      "ddr_dq[29]": {
+        "signal": "ddr_dq[29]",
+        "pins": [
+          "V2"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 220
+      },
+      "ddr_dq[28]": {
+        "signal": "ddr_dq[28]",
+        "pins": [
+          "U2"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 222
+      },
+      "ddr_dq[27]": {
+        "signal": "ddr_dq[27]",
+        "pins": [
+          "U3"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 224
+      },
+      "ddr_dq[26]": {
+        "signal": "ddr_dq[26]",
+        "pins": [
+          "T1"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 226
+      },
+      "ddr_dq[25]": {
+        "signal": "ddr_dq[25]",
+        "pins": [
+          "Y1"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 228
+      },
+      "ddr_dq[24]": {
+        "signal": "ddr_dq[24]",
+        "pins": [
+          "W2"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 230
+      },
+      "ddr_dq[23]": {
+        "signal": "ddr_dq[23]",
+        "pins": [
+          "T5"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 232
+      },
+      "ddr_dq[22]": {
+        "signal": "ddr_dq[22]",
+        "pins": [
+          "V5"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 234
+      },
+      "ddr_dq[21]": {
+        "signal": "ddr_dq[21]",
+        "pins": [
+          "T4"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 236
+      },
+      "ddr_dq[20]": {
+        "signal": "ddr_dq[20]",
+        "pins": [
+          "Y6"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 238
+      },
+      "ddr_dq[19]": {
+        "signal": "ddr_dq[19]",
+        "pins": [
+          "R4"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 240
+      },
+      "ddr_dq[18]": {
+        "signal": "ddr_dq[18]",
+        "pins": [
+          "U6"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 242
+      },
+      "ddr_dq[17]": {
+        "signal": "ddr_dq[17]",
+        "pins": [
+          "R6"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 244
+      },
+      "ddr_dq[16]": {
+        "signal": "ddr_dq[16]",
+        "pins": [
+          "U5"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 246
+      },
+      "ddr_dq[15]": {
+        "signal": "ddr_dq[15]",
+        "pins": [
+          "Y9"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 248
+      },
+      "ddr_dq[14]": {
+        "signal": "ddr_dq[14]",
+        "pins": [
+          "AB6"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 250
+      },
+      "ddr_dq[13]": {
+        "signal": "ddr_dq[13]",
+        "pins": [
+          "W9"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 252
+      },
+      "ddr_dq[12]": {
+        "signal": "ddr_dq[12]",
+        "pins": [
+          "AB8"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 254
+      },
+      "ddr_dq[11]": {
+        "signal": "ddr_dq[11]",
+        "pins": [
+          "Y7"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 256
+      },
+      "ddr_dq[10]": {
+        "signal": "ddr_dq[10]",
+        "pins": [
+          "AB7"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 258
+      },
+      "ddr_dq[9]": {
+        "signal": "ddr_dq[9]",
+        "pins": [
+          "Y8"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 260
+      },
+      "ddr_dq[8]": {
+        "signal": "ddr_dq[8]",
+        "pins": [
+          "AA8"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 262
+      },
+      "ddr_dq[7]": {
+        "signal": "ddr_dq[7]",
+        "pins": [
+          "AB1"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 264
+      },
+      "ddr_dq[6]": {
+        "signal": "ddr_dq[6]",
+        "pins": [
+          "AB5"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 266
+      },
+      "ddr_dq[5]": {
+        "signal": "ddr_dq[5]",
+        "pins": [
+          "AB2"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 268
+      },
+      "ddr_dq[4]": {
+        "signal": "ddr_dq[4]",
+        "pins": [
+          "AA1"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 270
+      },
+      "ddr_dq[3]": {
+        "signal": "ddr_dq[3]",
+        "pins": [
+          "V4"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 272
+      },
+      "ddr_dq[2]": {
+        "signal": "ddr_dq[2]",
+        "pins": [
+          "AA5"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 274
+      },
+      "ddr_dq[1]": {
+        "signal": "ddr_dq[1]",
+        "pins": [
+          "AB3"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 276
+      },
+      "ddr_dq[0]": {
+        "signal": "ddr_dq[0]",
+        "pins": [
+          "Y4"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 278
+      },
+      "ddr_dqs[3]": {
+        "signal": "ddr_dqs[3]",
+        "pins": [
+          "R3",
+          "R2"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15D",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 280,
+        "paired_negative_signal": "ddr_dqs_n[3]"
+      },
+      "ddr_dqs[2]": {
+        "signal": "ddr_dqs[2]",
+        "pins": [
+          "W6",
+          "W5"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15D",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 282,
+        "paired_negative_signal": "ddr_dqs_n[2]"
+      },
+      "ddr_dqs[1]": {
+        "signal": "ddr_dqs[1]",
+        "pins": [
+          "V9",
+          "V8"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15D",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 284,
+        "paired_negative_signal": "ddr_dqs_n[1]"
+      },
+      "ddr_dqs[0]": {
+        "signal": "ddr_dqs[0]",
+        "pins": [
+          "Y3",
+          "AA3"
+        ],
+        "direction": "inout",
+        "IO_PORT": {
+          "IO_TYPE": "SSTL15D",
+          "PULL_MODE": "NONE",
+          "DRIVE": "8",
+          "BANK_VCCIO": "1.5"
+        },
+        "CST_line": 286,
+        "paired_negative_signal": "ddr_dqs_n[0]"
+      }
+    }
+  },
+  "CST_pin_entry_count": 145,
+  "CST_physical_ball_count": 150,
+  "current_FS": {
+    "path": "D:\\TangMusic_Files\\TangMusic_Dual_Board\\Delivery\\A_KeyFix_D215\\impl\\pnr\\TangMusic_A_KeyFix_D215.fs",
+    "project_relative_path": "impl/pnr/TangMusic_A_KeyFix_D215.fs",
+    "bytes": 40472063,
+    "sha256": "e222df1028f30b38fa79a5296c9da6554220f635b2dee7f6f361170bb82ff05c",
+    "header": {
+      "File Title": "Bitstream file",
+      "Tool Version": "V1.9.12.03 (64-bit) (86715)",
+      "Device": "GW5AST-138",
+      "Device Version": "C",
+      "Part Number": "GW5AST-LV138PG484AC1/I0",
+      "Device-package": "GW5AST-138C-PBGA484A",
+      "BackgroundProgramming": "OFF",
+      "CheckSum": "0x3E3A",
+      "UserCode": "0x0000d215",
+      "LoadingRate": "2.500MHz",
+      "CRCCheck": "ON",
+      "Compress": "OFF",
+      "Encryption": "OFF",
+      "SecurityBit": "ON",
+      "SecureMode": "OFF",
+      "JTAGAsRegularIO": "OFF",
+      "SEUHandler": "OFF",
+      "MultiBootAddrWidth": "24",
+      "MultiBootSPIAddr": "0x00000000",
+      "MspiJumpAddrWidth": "24",
+      "MspiJumpSPIAddr": "0x000000",
+      "Created Time": "Mon Nov  2 23:12:25 2026"
+    },
+    "matches_expected_e222df": true
+  },
+  "current_synthesis_resource_totals": {
+    "T_Lut": 69677,
+    "T_Alu": 9817,
+    "T_Register": 36273,
+    "T_MULTALU27X18": 96,
+    "T_MULT27X36": 2,
+    "T_Bsram": 134,
+    "T_Ssram": 131
+  },
+  "artifact_evidence_sha256": {
+    "D:\\TangMusic_Files\\TangMusic_Dual_Board\\Delivery\\A_KeyFix_D215\\impl\\pnr\\TangMusic_A_KeyFix_D215.fs": "e222df1028f30b38fa79a5296c9da6554220f635b2dee7f6f361170bb82ff05c",
+    "D:\\TangMusic_Files\\TangMusic_Dual_Board\\Delivery\\A_KeyFix_D215\\impl\\pnr\\TangMusic_A_KeyFix_D215_tr_content.html": "aa3099ee0d2e054dbb9f38a26552f8b16ad3a49992877f0bae8d109514cb6d2e",
+    "D:\\TangMusic_Files\\TangMusic_Dual_Board\\Delivery\\A_KeyFix_D215\\impl\\pnr\\TangMusic_A_KeyFix_D215.log": "4a0eca7b101cb2efb5264bdb3f0517fbce67231d216bdaa6b168740b67e5368b",
+    "D:\\TangMusic_Files\\TangMusic_Dual_Board\\Delivery\\A_KeyFix_D215\\impl\\pnr\\TangMusic_A_KeyFix_D215.rpt.txt": "3a9534c74b370f20ef7096a24ab2702ebfc2d3f2eca59d9ff71b5a733da3888f",
+    "D:\\two dimension\\fpga\\gowin\\138k\\output\\a-flash-d215-20261102\\final_result.json": "c0ad1c38d4255cdfcbcb51b5f14f99640c0ee0fd229eda23c3600b0e7c59e12d",
+    "D:\\two dimension\\fpga\\gowin\\138k\\output\\a-flash-d215-20261102\\retry-low-clock\\flash_program_verify.log": "38fd5372ad80488ca53aa47170a497c86d077a41879b43006a814a2b35cc7ccb",
+    "D:\\two dimension\\fpga\\gowin\\138k\\output\\a-flash-d215-20261102\\reprogram_from_flash.log": "c4d70d236915477788791d03a24a3d23f7e476b3afc5ae8fcd664c8571ba5092",
+    "D:\\two dimension\\fpga\\gowin\\138k\\output\\a-flash-d215-20261102\\final_boot_read_codes.log": "3c1dabf38fb2aec610324da96354ca7a0ca450a07c4faadef301d397c4ddc9cf"
+  },
+  "critical_source_locations": [
+    {
+      "file": "src/studio_board_a.v",
+      "line": 184,
+      "anchor": "instrument_air_drum #(.REMOTE_SYNTH(1))"
+    },
+    {
+      "file": "src/instrument_audio.v",
+      "line": 146,
+      "anchor": "wire signed [17:0] mixed_pcm"
+    },
+    {
+      "file": "src/midi_keyboard_synth_v2.v",
+      "line": 302,
+      "anchor": "audio_mixer_32 u_mix"
+    },
+    {
+      "file": "src/studio_drum_transport.sv",
+      "line": 3,
+      "anchor": "parameter integer LATENCY=128"
+    },
+    {
+      "file": "src/audio_sample_clock.v",
+      "line": 9,
+      "anchor": "if(count==10'd31)"
+    },
+    {
+      "file": "src/pcm5102_i2s_tx.v",
+      "line": 11,
+      "anchor": "module pcm5102_i2s_tx"
+    },
+    {
+      "file": "src/studio_flute_key_probe.v",
+      "line": 9,
+      "anchor": "module studio_flute_key_probe"
+    }
+  ]
+}

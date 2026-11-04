@@ -1,0 +1,18 @@
+pluginManagement {
+    resolutionStrategy { eachPlugin { if (requested.id.id == "com.android.application") useModule("com.android.tools.build:gradle:${requested.version}") } }
+    repositories {
+        def localRepo = System.getenv("TANG_LOCAL_MAVEN")
+        if (localRepo) maven { url = uri(localRepo) }
+        mavenCentral(); google(); gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        def localRepo = System.getenv("TANG_LOCAL_MAVEN")
+        if (localRepo) maven { url = uri(localRepo) }
+        mavenCentral(); google()
+    }
+}
+rootProject.name = 'TangMusic'
+include ':app'

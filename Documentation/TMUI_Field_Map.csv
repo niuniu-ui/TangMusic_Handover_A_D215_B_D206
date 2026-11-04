@@ -1,0 +1,19 @@
+﻿方向,位域,含义
+A到B,bits1257:0,显示状态
+A到B,bits1535:1280,16×signed16展示PCM（A最终dac副本）
+A到B,bits1567:1536,展示PCM块编号
+A到B,bits1599:1568,A audio/requested样本索引
+A到B,bits1855:1600,4×64bit鼓事件槽
+A到B,bits1863:1856,最新事件8bit sequence
+A到B,bits1871:1864,epoch
+A到B,bits1887:1872,0xD2A1兼容标记
+A到B,bits1927:1920,signed8鼓bend
+A到B,bits1935:1928,鼓delay参数
+A到B,bits1967:1936,A鼓transport underrun计数
+B到A,bits273:0,274bit处理后的触摸包
+B到A,bits319:288,回传16sample块起始样本标签
+B到A,bits575:320,16×signed16鼓PCM
+B到A,bits591:576,块有效0xB2D1；无效0
+B到A,bits599:592,epoch
+B到A,bits639:608,32bit音符active mask，测试模式为0而不是分量数
+B到A,bit640,鼓fault

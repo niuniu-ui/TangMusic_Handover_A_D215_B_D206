@@ -1,0 +1,19 @@
+:root{color-scheme:light;--bg:#f7f6e8;--surface:#fffdf4;--surface2:#edf0de;--border:#d9dfca;--text:#234134;--muted:#63735e;--blue:#8053ac;--brand:#8053ac;--navy:#234134;--rose:#b17194}
+html{background:#eeeede}body{color:var(--text)}
+.pocket-return{display:block;padding:16px 22px 0;color:#68428b;font-weight:650;text-decoration:none;min-height:44px}
+.topbar{border-color:var(--border)}.brand b,.brand small,.subtitle,.hint,.page-note,.protocol-note,.hero-footnote,.grow small,.tiny-label,.overline,.quiet-label,.page-index,.eyebrow,.hardware-caption{color:var(--muted)}
+.card,.settings-card,.score-hero,.device-hero,.player-card,.transfer-card,.connection-card,.send-card,.source-card,.instrument-band,.interface-details,.command-card,.fit-card,.catalog-card,.catalog-result,.debug-note,.dialog-callout{background:var(--surface);border-color:var(--border);color:var(--text);box-shadow:none}
+.source-card,.card,.settings-card,.score-hero,.device-hero{border-radius:20px}
+.badge,.small-badge,.quiet-label,.source-tag,.icon-tile,.connection-pill,.mode-button,.segmented,.device-result,.range-stats>div,.platform-strip,.log-toolbar,.log-bottom{background:#e9edda;color:#365440;border-color:var(--border)}
+.primary,.badge.ready,.connection-pill.connected,.mode-button.selected,.segmented button.active{background:#8053ac;color:#fffdf5;border-color:#8053ac}
+.secondary,.outline-button,.text-link{color:#69408f;border-color:#bca8cd;background:#f1eafa}
+h1 span,.score-title h2,.score-metadata strong,.range-stats strong,.fit-heading strong,.grow strong{color:#234134}
+.bottom-nav{background:#234134;border-color:#234134}.bottom-nav button{color:#c5d5bc}.bottom-nav button.active{color:#fffced}
+input:not([type=checkbox]):not([type=range]),textarea,select,dialog{background:#fffdf4;color:#234134;border-color:#ccd4bd}
+.log-output,.byte-preview{background:#edf0df;color:#294839;border-color:#ccd4bd}
+.workflow,.workflow .current{color:#69428d}.workflow b,.workflow .current b{border-color:#b5a2c7;background:#eee4f5;color:#69428d}
+.score-art svg,.score-art span{color:#8053ac;stroke:#8053ac}.score-hero:after{border-color:#8053ac18}
+#toast{background:#234134;color:#fffced;border-color:#526e51}.field-error,.danger-link{color:#a63945}
+.ble-list-head strong,.ble-empty,.ble-search,.device-result small,.device-result .connect-label,.minlink-metrics,.minlink-metrics b{color:#526b51}
+.named-only,.ble-device-icon,.minlink-steps span{background:#e9edda;color:#365440;border-color:#ccd4bd}
+input::placeholder,textarea::placeholder{color:#728169;opacity:1}.minlink-steps .done,.minlink-steps .active{background:#dfd1ec;color:#59387a}

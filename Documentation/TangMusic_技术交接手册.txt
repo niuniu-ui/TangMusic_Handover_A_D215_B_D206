@@ -1,0 +1,284 @@
+﻿TangMusic 双板系统技术交接手册
+A D215 | B D206 | Android 0.7.3-library | 2026-11-03
+
+1 交接版本与接手顺序
+
+本手册面向后续接手开发和维护的人员。交接基线为 A D215、B D206 和 TangMusic App 0.7.3 library。完整工程、已有烧录文件、手机应用和接线及协议资料均随包提供；接手者可先恢复当前系统，再按模块修改。整理日期为 2026 年 11 月 3 日。
+
+项目 | 交接版本 | 工程入口
+A 音频与采集 | D215 | FPGA/A_D215/TangMusic_A_KeyFix_D215.gprj
+B 显示与鼓合成 | D206 | FPGA/B_D206/TangMusic_B_Clean_UI_D206.gprj
+Android 应用 | 0.7.3 library / versionCode 703 | App/AndroidProject / MainActivity
+FPGA 器件 | 两板相同 | GW5AST-LV138PG484AC1/I0 / Tang Mega 138K NEO Dock
+
+建议先核对随包清单和固件版本，按第 3 章恢复接线，用既有固件确认声音和显示，再阅读第 4 至 8 章定位功能代码。需要修改时，复制工程另存新版本，完整综合与布局布线后复测，避免用旧网表配新源码。
+
+A 的当前 .fs 与已有 Flash 编程校验及显式重载成功记录的哈希一致。B 的 .fs 是用户后来在交付目录生成的 D206 文件，本次只归档，没有新做板端身份回读或功能验收。两板现有报告仍有 setup 违例，工程并未完成时序收敛；第 12 章保留具体数值与后续事项。
+
+目录 | 用途
+FPGA | 两板完整 HDL、生成后的 IP 与 ROM、界面资源、约束、GPRJ、构建 TCL、GUI 配置及少量可复用资源生成器。
+Firmware | A D215 与 B D206 的现有 .fs，可由高云 Programmer 直接读取。
+App | Android 工程和现有 APK；不带 SDK、IDE、缓存或本机签名文件。
+Documentation | 本手册、引脚 CSV、协议 CSV、当前工程报告、Flash 成功记录、来源说明和界面示例。
+MANIFEST_SHA256.txt | 每个随包文件的 SHA256。SOURCE_ORIGINS.json 说明源码、固件和应用的来源及核对范围。
+
+2 系统架构与音频时钟
+
+A 是采集和最终音频主板，B 是显示及空气鼓合成板。实体钢琴、笛子、鼓棒和蓝牙接 A；HDMI 和 USB 触摸接 B；两板通过原生 RJ45 网线直连。全部最终声音从 A 的外接 PCM5102A 输出。
+
+架构图见 architecture.png。
+
+A 本地产生钢琴与笛子 PCM，识别鼓击打后把带时间戳的事件发给 B。B 合成鼓音并按 16 个样本一块回传。A 将琴、笛、鼓混音，按当前模式叠加四轨、执行总音量并输出 I2S；录音和频谱展示观察最终 DAC 样本。录音回放开启时，回放选择器取代实时混音。
+
+项目 | 设计值 | 含义
+A 与 B 系统时钟 | 50 MHz | 周期 20 ns，板上 V22 输入。
+最终 DAC 采样率 | 50 MHz ÷ 1024 / 48828.125 Hz | A 的 audio_sample_clock 决定；这是设计值，未在本次整理中用 LRCK 实测。
+I2S 位时钟 | 3.125 MHz | Philips I2S，32 bit 槽；16 bit 有效音频，左右槽发送相同混音。
+B 鼓渲染间距 | 512 个 50 MHz 时钟 | 内部计算预算，不能作为 DAC 采样率，也不叠加吞吐量得分。
+视频 | 1024 × 600 / 像素 51.25 MHz | 总时序 1344 × 635，约 60 Hz；串行时钟 256.25 MHz。
+双板链路 | 千兆私有二层以太网 | 周期快照设计约 50 μs；不使用 IP、UDP 或路由器。
+
+A 的 DDR 用于录音和四轨缓存，B 的 DDR 用于界面资源。两个 DDR 是各板本地存储。源码目录保留了一些共用或历史模块，判断某功能实际运行在哪块板时，应沿对应 studio_board_a 或 studio_board_b 的实例化链查看。
+
+3 接线与接口核对
+
+以下引脚名均为 FPGA 球位，不是扩展排针序号。以当前顶层使用的 studio_board_a.cst、studio_board_b.cst 为最终依据。完整 IO_LOC 与 IO_PORT 已导出为 A_D215_Pins.csv、B_D206_Pins.csv；差分引脚一项可能列出正负两个球位。
+
+设备或接口 | 连接 | 说明
+A 时钟及复位 | V22 / AB13 | 50 MHz；key_n 低有效。
+A PCM5102A | BCK A21 / LRCK A16 / DIN A20 | 三线 I2S，模块与 A 共地；本接法模块 SCK 接数字地使用内部 PLL。
+A 琴键矩阵行 | AA18 AB20 AA21 AB22 Y22 V20 N14 P17 | fpc_drive[0..7]，按现有 16 线排线顺序；行驱动为低电平或高阻。
+A 琴键矩阵列 | AB18 AA19 AA20 AB21 Y21 U20 N13 N17 | fpc_sense[0..7]；双触点共 32 键。
+A 延音与灯 | 踏板 B17；琴灯 B21；频谱灯 A18；鼓灯 D17 | 踏板低有效、3.3 V；琴灯 96 颗，每键 3 颗。LED 供电与 FPGA 信号共地。
+A 笛子前六键 | E13 E14 C14 C15 C13 B13 | flute_keys_n[0..5]，低有效。
+A 笛子背键 | A13 / A14 | flute_keys_n[6..7]，独立选择低中高八度。
+A 笛子 ADC SPI | CS B15 / CLK B16 / MOSI D15 / MISO D16 | 气息输入；D14 的 flute_uart_tx 当前保持高，不是诊断输出。
+A 双 IMU | RX E17、TX F16；RX2 F14、TX2 F13 | ATK IMU901，115200 8N1；TX/RX 按 FPGA 方向命名。
+A 蓝牙 | RX D20 / TX C20 / LINK F15 | UART 921600 8N1；LINK 低有效。
+A 延迟探针 | 琴 C18 / 笛 D19 / 鼓 C19 | 三路逻辑脉冲设计宽度 20 ns，LVCMOS33。
+A 与 B 诊断 TX | 各板 U15 | 115200 8N1；球位到实际可接位置须查 Dock 接口表。
+B HDMI 与触摸 | HDMI 原生口；USB DP/DM M15/M16 或 H13/G13 | 显示及触摸均接 B。HDMI 蓝/绿/红正端 J14/J15/K17，时钟正端 G15。
+A 与 B 网口 | 两板原生 RJ45 直连 | 板载 PHY 与 DDR 球位均保持原约束；DDR IO 为 1.5 V，不按外设 3.3 V 接线。
+
+WS2812 灯板用独立 5 V 电源，5 V 不接入 FPGA 信号脚；引导灯按 A → B → A → B → A → T 灯板顺序串接，共 96 灯。外设信号地与 FPGA 共地。板级排针转接、供电和接头定义仍需结合实际硬件；本包不把球位表当作 PCB 原理图。
+
+4 A 板源码与电子琴修复
+
+功能 | 主要源码 | 处理关系
+系统集成 | studio_board_a.v | 连接采集、协议、控制、DDR、远端鼓和最终音频。
+琴键扫描与力度 | matrix_scan.v / keyboard_scan_input.v / key_velocity.v | 8 × 8 触点；双触点时间经原力度曲线产生 NoteOn 和 velocity。
+琴音合成 | midi_keyboard_synth_v2.v / piano_voice_v2.v / audio_mixer_32.v | 32 路独立相位、力度及包络；D215 恢复独立 PCM 和原加法树。
+笛子 | instrument_flute.v / flute_fingering.v / flute_breath.v / flute_voice_select.v | 指法决定音高，气息决定响度与门控，支持笛及唢呐音色。
+鼓事件和回传 | instrument_air_drum.v / air_drum_imu_core.v / studio_drum_transport.sv | REMOTE_SYNTH 为 1；本地识别事件，远端 B 合成，A 接收有样本标签的 PCM。
+混音及输出 | instrument_audio.v / piano_effects.v / audio_sample_clock.v / pcm5102_i2s_tx.v | 琴效果和分路音量、18 bit 三路相加及饱和、Loop、总音量、I2S。
+手机和存储 | studio_uart_router.sv / tmcp_uart_endpoint.sv / studio_recorder.sv / studio_audio_looper.sv | 控制和录音复用同一 UART，DDR 保存录音槽与四轨内容。
+
+D215 对最低键问题采取的变更集中在 midi_keyboard_synth_v2.v：恢复 32 个 voice 的 SHARED_GAIN=0、各自的两级 PCM 乘法以及 audio_mixer_32 平衡加法树。保留原力度、音高、音区、延音、House 音色、通信和三探针。交接版不是 P14 第一键参考音诊断工程，也没有把所有力度强制设成 127。
+
+内部音区组 | 实际可用范围 | 接手注意事项
+0 | C0 至 C2 | 保持原设计，实体最左 7 键禁用。
+1 | F1 至 C4 | 32 键有效。
+2 默认 | F3 至 C6 | 32 键有效；本地练习和手机曲谱引导使用此组。
+3 | F5 至 C8 | 32 键有效。
+
+琴键原始事件编号 41 至 72 不是当前八度下的实际 MIDI 发声音高；最终音高由相位步进表和音区组决定。最低键无声是 D215 的历史修复背景，不能把旧 D212 故障记录当作当前确认版本仍然存在的结论。
+
+5 B 板界面与交互维护
+
+B 顶层 studio_board_b.v 负责 USB 触摸、双板网络、原子跨时钟快照、远端鼓合成、DDR 图集和 HDMI。主控制器及参数提交仍在 A。B 的本地扩展控制只处理节奏练习、实验室模式和必要的触摸代理。
+
+修改目标 | 代码入口 | 同步维护内容
+场景与动态文字 | studio_renderer.sv / studio_text.vh / studio_font.v | 页号、字库索引、位置、底色遮罩和文字宽度。
+本地控件和图形 | studio_extra_control.sv / studio_extra_graphics.sv | 触点判定及图形必须同改，避免画面与实际点击范围不一致。
+练习时间线 | studio_game_songs.vh / tools/generate_game_songs.py | 判定、落点和节拍共用毫秒时间线；四拍预备。
+鼓活跃统计 | studio_drum_activity.sv / air_drum_synth.v | 实际主分量和附加分量计数；约 1 秒近期峰。
+波形和李萨如 | ui_scope_capture.v / ui_lissajous_capture.v | 消费 A 最终输出展示副本；XY 轴和轨迹覆盖顺序在渲染层。
+实时频谱 | studio_lab_fft.sv / studio_lab_twiddle.vh | 128 点 FFT，画面为 32 根柱；需更高分辨率的外部工具验证 128 音峰。
+图集和 DDR | studio_artwork_ddr.sv / studio_asset_loader.sv / studio_asset_config.vh | 16 场景，压缩资源加载后由 DDR 与像素缓存供图。
+
+D206 保留 D205 的整块校准按钮、淡色李萨如 XY 轴和互联页右上图标清理。空气鼓校准热区为 x 171 至 283、y 145 至 189，所有有效触点均代理到 A 原有命令入口；短暂出现的“请求已发”只表示已发起，不是传感器校准成功 ACK。校准时仍要看两根鼓棒实际状态。
+
+D206 删除实验室底部 UNITS、Fs des、kOSC/s des 和状态文字，删除频谱中的 FFT128 及约 381 Hz 说明。保留“活跃声部”标题、合计、琴/鼓/笛统计、鼓近期峰、频率轴及左下采样率。琴音色名称改为“机械钢琴”和“电子合成琴”；A 的音色算法没有因此变化。
+
+文字重复的问题涉及静态贴图与动态 RTL 两层。新增或删除字段应先确定归属，完整擦除旧静态区域，再按统一布局绘制新值；不能只改预览贴图。当前 src 与 assets 已包含最终结果，普通构建不需要重新生成资源。DesignReference 是历史底图；Preview 是真实 RTL 加示例遥测的输出，均不能当作实板验证照片。
+
+6 空气鼓与吞吐量模式
+
+普通演奏有 32 个鼓音符槽，每槽包含一个主振荡器和三个额外独立 DDS 分量，总结构上限 128。附加分量分别保存相位、频率控制字、包络、门控和力度等状态，通过时分复用在同一音频样本周期内完成计算。噪声或由同一相位推导的谐波不另外算作独立振荡器。
+
+实验室选择 | 运行结构 | 操作结果
+PLAY 或音乐模式 | 普通 32 槽鼓事件 | 实体鼓正常演奏；统计为主引擎 active 状态加达到门限的附加分量。
+32 OSC | 32 个主 DDS | 持续多频输出。
+64 OSC | 32 主 DDS 加 32 附加 DDS | 持续多频输出。
+128 OSC | 32 主 DDS 加 96 附加 DDS | 持续多频输出，不是 128 个物理输出口或 128 个音符槽。
+
+测试频率 f(i) = 220 + 37 × i Hz，128 模式覆盖 220 至 4919 Hz。测试期间正常鼓事件被忽略或清理；离开实验室、断连或复位会退出测试并回到音乐模式。保留在实验室即可同时用 A 的实体琴键和笛子演奏。切去钢琴页点触摸键会先离开测试页，不能用这种操作证明同时混音。
+
+系统把所有鼓分量混成一条 16 bit PCM 回传 A，再与钢琴、笛子相加。最终混音有饱和限制，三路全幅叠加可能削顶。测试和演示应预留音量余量，观察最终模拟输出，而不能只看活跃掩码或屏幕数字。界面合计最高可显示 32 琴加 128 鼓加 1 笛，共 161；该数混合了统计单位，不能直接声称已验证 161 个独立可闻振荡器。
+
+赛题吞吐量按同时活跃可闻独立振荡器数乘实际输出采样率计算。若最终输出实测符合设计值，128 × 48828.125 = 6250000 振荡器样本每秒。这个数是设计计算值，现场还需要实际 LRCK 频率、长窗口 FFT 中独立频峰及独立状态的 RTL 证据。当前 UI 只有整档切换；若要逐分量启停对照，需另备验证门控手段。B 的 512 时钟计算节拍和过采样不额外计分。
+
+B 内建 128 点 FFT 的频率间隔约 381 Hz，不能分辨间隔 37 Hz 的全部测试频率。建议采集 A 的模拟或最终数字输出做更长窗口频谱，分别记录 32、64、128 档及琴笛同时演奏的结果；本次交接没有补做这组实板测量。
+
+演奏表情方面，鼓可展示击打力度、姿态弯音、姿态控制尾音等独立控制；钢琴展示双触点力度与踏板延音，笛子展示同指法下的气息响度和门控。当前笛气息抖动引起的响度变化不应称为音高颤音。
+
+7 双板链路与手机协议
+
+双板链路使用 EtherType 0x88B5 的私有二层 Ethernet 帧，协议标记 TMUI、版本 1。A 角色 0，源 MAC 02:54:4D:00:00:01；B 角色 1，源 MAC 02:54:4D:00:00:02；目的为广播。有效 payload 256 byte，含 FCS 的帧为 290 byte；加前导码及 SFD 为 298 byte。序号及其反码是大端字段，payload 内多字节字段按小端。
+
+方向 | 主要信息 | 对应入口
+A 到 B | 显示状态；16 个展示 PCM；样本及块编号；4 个带时间戳鼓事件；epoch；bend 和 delay；欠载计数。 | studio_display_link.v / studio_remote_io.v / studio_drum_transport.sv
+B 到 A | 274 bit 触摸快照；16 个鼓 PCM；绝对样本标签；0xB2D1 有效标记；epoch；32 bit note active mask；fault。 | studio_remote_drum.sv / studio_net_frames.v
+
+链路仅在 PHY 配置成功、MDIO 有效且为千兆时开放。周期快照约 50 μs，变化触摸可提前发送，peer 超时约 100 ms。RX 只提交长度、头部和 Ethernet CRC 正确的整帧。断连会清除远端触摸和远端鼓状态；A 的实体琴/笛仍有本地音频路径。完整字段位域另见 TMUI_Field_Map.csv，修改时同步维护双方协议、版本标记与校验。
+
+手机经 BLE 模块桥接 A 的 UART。默认服务 FFF0、手机写入 FFF2、通知 FFF1，可在 App 中按实际模块修改。底层 UART 默认 921600、8N1，与 U15 的 115200 诊断串口不同。Manifest 为 Android 12 及以后申请扫描/连接权限，旧系统申请定位权限。App 默认只显示 E104 或 Tang Music 名称匹配的设备及上次连接地址。
+
+TMCP 帧偏移 | 字节数 | 字段
+0 | 2 | 54 4D，字节标记 TM。
+2 / 3 | 1 / 1 | major / kind，kind 为请求、应答或事件。
+4 / 6 | 2 / 2 | command / sequence，小端。
+8 / 12 | 4 / 2 | session ID / payload length，小端。
+14 | 0 至 256 | payload。
+尾部 | 2 | CRC16，初始 FFFF、多项式 1021；覆盖 major 至 payload，CRC 值小端。
+
+TMCP 连接后执行 HELLO、能力/状态查询和参数版本核对。参数、键位和曲谱操作由客户端执行序列与会话校验；录音回传还保留 PRQ1/PRS1 帧及 CRC32，由 studio_uart_router 保持一帧的发送所有权。App_Protocol_Constants.csv 导出全部常量，App_Parameters.csv 给出参数 ID、范围和默认值；实现以双方当前协议源码为准。
+
+8 手机应用源码与构建
+
+App/AndroidProject 保留 app/src/main 的 Java、Manifest、资源与网页，根 Gradle 文件、ui 源目录和 Gradle wrapper。正式入口是 MainActivity，内部 WebView 加载 assets/web/index.html；Java 处理 BLE、文件、MIDI、曲谱、录音和四轨。源码中保留的旧 PianoRecorderActivity 没有在当前 Manifest 中作为入口注册。
+
+模块 | 作用
+MainActivity / BleTransport | WebView 桥接、权限、扫描连接、UUID 配置、通知和应用生命周期。
+BleWriteQueue / TmcpClient / TangFrameCodec | 共享 BLE 发送队列、会话/参数状态、帧编解码与校验。
+MidiRepository / ScoreBrowser / midi adapter | 本地 MIDI、HTTPS 曲库、搜索、分轨、片段、移调、速度和音域适配。
+ScoreUploadClient / KeymapClient | 曲谱分块上传及板端确认；32 键映射下发和回读。
+AudioLoopClient / RecorderClient | 四轨状态/录制/控制；双录音槽、回传、重试与整段 CRC。
+PocketFiles / assets web | 本地录音管理及手机播放；曲库、乐器、调音、录音页面。
+
+当前工程配置为 namespace cn.tangmusic.app、applicationId cn.tangmusic.app.minlink、versionName 0.7.3-library、versionCode 703、minSdk 26、compileSdk/targetSdk 36、Java 17，AGP 9.4.1、Gradle wrapper 9.6.0。上述为随包现有配置记录，本轮未联网校验依赖仓库可用性，也未在新电脑做干净重建；需要接手者配置 SDK/JDK 并完成首次构建验证。
+
+Windows
+.\gradlew.bat :app:assembleDebug
+
+其他系统
+sh ./gradlew :app:assembleDebug
+
+用 Android Studio 打开 AndroidProject，配置自己的 SDK 路径。可选 TANG_LOCAL_MAVEN 仅用于本地 Maven 镜像；未设置时使用工程中正常仓库。输出通常位于 app/build/outputs/apk/debug。包内没有 local.properties、sdk-build 历史产物、Gradle 缓存、私钥或旧 build-apk.ps1。Gradle wrapper JAR 是必要构建组件，已保留。
+
+preBuild 的 packageInstrumentUi 会把 ui 中 index.html、instrument-style.css、instrument-ui.js、score-ui.js、performance-ui.js 复制进 assets/web。修改这五个界面文件应维护 ui 源，避免下次构建覆盖只改 assets 的结果。其余网页资源直接维护 assets/web。保留的 ui/README 是历史说明，不能用它判断当前版本。
+
+现有 APK 的全部 assets 与当前源码资产逐文件一致，五个复制输入也一致；这不能证明 APK 内所有 Java/Dex 已由本次源码重新构建。本次提供的是原有 debug 安装包。新电脑重建的 debug 签名可能不同，卸载旧版前先导出要保留的录音及曲谱。
+
+9 FPGA 构建与固件恢复
+
+两板使用 Gowin EDA V1.9.12.03 64 bit，器件 GW5AST-LV138PG484AC1/I0。工程已包含 DDR/PLL 生成源码及 ROM 初始化，正常构建不需要另跑界面生成器或安装测试软件。Gowin 安装中的器件、原语及 IP 支持仍需完整。
+
+分别打开两个 .gprj，检查 A 顶层 studio_board_a、USERCODE 0000D215，B 顶层 studio_board_b、USERCODE 0000D206。impl 目录中唯一 process_config.json 是 GUI 工程配置，须保留；它不是可删除的临时网表。对应 TCL 也显式设置顶层、输出名、CPU/SSPI GPIO 等选项。
+
+gw_sh.exe "FPGA/A_D215/synthesize_board_a.tcl"
+gw_sh.exe "FPGA/A_D215/route_board_a.tcl"
+
+gw_sh.exe "FPGA/B_D206/synthesize_board_b.tcl"
+gw_sh.exe "FPGA/B_D206/route_board_b.tcl"
+
+上述命令需在交接包根目录执行，gw_sh.exe 使用接手电脑实际的 Gowin IDE/bin 路径。先综合成功，再布局布线；输出在各工程 impl/gwsynthesis 和 impl/pnr。TCL 会切换到脚本所在目录。重建后检查全部时钟的 setup、hold、恢复/移除及警告，重新生成 .fs 的哈希并保留对应报告。
+
+恢复已有固件时，可直接选 Firmware 下对应 .fs，无需转换为 .bin。Programmer 选择正确的下载器和 GW5AST 138C 器件，分别核对 A/B 文件及 UserCode。需要断电保存时选择 Arora V 对应的外部 Flash 擦除、编程和校验流程；仅配置 SRAM 不会实现断电保存。
+
+成功标准为工具明确完成 Program and Verify，再从 Flash 重新加载，读取器件 ID 和 UserCode，检查配置 Done 及错误状态；接手者随后补做实际断电再上电和整机验收。A 的既有记录使用 1.1 MHz 下载时钟成功，ID 0001081B、UserCode 0000D215、状态 00026020。USB 位置号是当时电脑枚举值，不应硬编码为换机后的板卡身份。
+
+建议保持该 A D215 和 B D206 组合恢复，避免误用第一键诊断 D213、旧 D101/D102 或早期双板固件。此交接整理没有执行综合、布局布线或烧录，也没有改变现有 Flash。
+
+10 整机功能操作
+
+首次上电先确认 A 的琴/笛本地发声，再确认 B 画面、触摸、双板网口和鼓音。A 的音频启动有约 200 ms 设计静音，DDR 与网络也需要各自初始化。耳机或音箱应接 PCM5102A 的实际模拟输出，确认总音量、分路音量、静音及回放状态。
+
+功能 | 操作与观察
+钢琴 | 默认音区组 2；逐键、最低键及相邻键，实体与触摸分别验证。再弹四音和弦、轻重击键、松键包络及踏板延音。切换机械钢琴/电子合成琴与各音区；组 0 的最左 7 键按原设计禁用。
+电子笛 | 上电后留出气息校准过程；按有效指法并吹气。前六键决定音名，背两键都按为低、按一个为中、都松开为高；同指法轻/重气息观察响度，停止吹气检查收音。切换笛/唢呐音色。
+空气鼓 | 鼓棒朝预期中心并稳定后按整块校准按钮；待两路 IMU 实际正常再演奏。检查四鼓区、两类音色、左右棒和重叠尾音；再展示力度、姿态弯音和尾音控制。查看真实活跃分量及近期峰。
+效果 | 在乐器与效果页调混响、延迟、合唱，逐个开关做听感对比，参数值及滑块应与状态一致。视觉删除李萨如“延时”入口不等于删除音乐延迟效果。
+波形与李萨如 | 播放单音、和弦，观察轨迹和波形；检查暂停/继续，XY 轴保持淡色。显示为最终音频的观察副本。
+本地节奏练习 | 使用组 2，选练习并等待四拍预备，在落点按对应八键。观察正确/错误/漏按、组合按键、暂停继续及结束评分；标题中的现代曲目为简化节奏片段，不是完整原曲谱。
+手机曲谱引导 | 完成连接、选曲和音域适配，上传并等板端确认；组 2 下选择弹对再继续或跟随节拍。观察目标灯、命中灯和按错灯，物理演奏推进，不把上传当自动 MIDI 播放。
+
+维护 B 触摸布局时，应同步检查多触点及第二手指仍能操作其他控件。曲谱引导、节奏练习、录音或 Loop 正在运行时，部分参数/键位变更会被锁定；先停止相关功能并松开全部琴键，再提交修改。
+
+11 手机曲库录音与四轨
+
+App 有曲库、乐器、调音、录音四个主要页面，共享同一条 BLE 连接。连接后等待协议在线和参数回读，再操作控制；仅显示已连接的系统蓝牙状态不等于 TMCP 会话已经可用。
+
+功能 | 完整流程
+连接与调音 | 授权蓝牙后扫描 E104/Tang Music，连接并订阅通知，确认在线。调总音量、琴音量、静音、音区以及混响/延迟/合唱，应用并回读。App 当前没有单独琴音色或笛/鼓分路音量控件，音色在 B 屏幕操作。
+32 键映射 | 乐器页调整排列或反转，保存/加载手机草稿；停止引导和录制并松键后下发，回读实际映射。灯引导应对应实体键位。
+曲库与导入 | 预置 32 项精选曲目目录，MIDI 需下载后缓存，另有内置练习样例。支持 Mutopia 搜索、本地 MIDI 或 HTTPS 导入；选择轨道、片段、移调、速度及音域适配，可导出 MIDI 或适配对象。未缓存的网络曲目需要联网。
+曲谱下发 | 检查音域和组 2，分块上传，等 COMMIT 和板端对象信息核对通过再开始引导；选择等弹对或按节拍，观察灯光和屏幕状态。
+四轨循环 | 设置 BPM、小节和预备拍；选轨录制一轮，轮结束后自动加入循环。逐轨检查静音、独奏、音量；停止后检查撤销/重做。它是板端 PCM 录制和循环，不是手机后台 MIDI 自动伴奏。
+板端录音 | 两槽任选一槽，开始/停止，等待数据封存后本地回放。每槽设计上限 5859375 个单声道 16 bit 样本，约 120 秒；采集最终输出，可包含四轨叠加。
+回传与保存 | 选录音回传，可暂停/继续；整段 CRC 和落盘核对完成后在手机播放并导出 WAV。只在 B 上按回放不等于手机已保存。
+
+录音与 Loop 存在 A 的 DDR，断电会丢失未导出的内容；手机已完成校验并保存的 WAV 是独立文件。实际设计采样率为 390625/8 Hz，标准 WAV 整数字段通常写 48828 Hz，相关元数据保存分数采样率；不要把这个整数显示值误当实测 LRCK。
+
+演示或验收时，把“现场实时演奏”“板端回放”“手机已保存文件播放”明确区分。回传速度受 BLE 模块、连接间隔、手机和链路质量影响，本手册不从 UART 波特率直接推算保证的文件传输时间。
+
+12 验证状态与后续交接事项
+
+本次核对确认两板所选 HDL、资源、约束和构建入口与确认交付版一致；包内工程文件和 include 依赖齐全；既有 .fs 与归档哈希一致；App 网页资源与现有 APK 一致。这里没有重新综合、布局布线、构建 APK 或重新开展实板全功能测量。
+
+现有工程报告 | A D215 | B D206
+PnR 完成时间 | 2026-11-02 23:12 | 2026-11-03 02:13
+Logic | 80196 / 138240，59% | 58787 / 138240，43%
+Register | 36273 / 139095，27% | 30140 / 139095，22%
+BSRAM | 159 / 340，47% | 161 / 340，48%
+MULTALU27X18 | 96 | 43
+Setup 违例端点 | 2090 | 342
+Hold 违例端点 | 0 | 0
+时序结论 | 未收敛 | 未收敛
+
+以上为现有 PnR 报告口径，不能与最早源码候选的综合估算混用。A 保留 clk_d/rx_clk_d 通用时钟资源警告，50 MHz 域报告 Fmax 为 42.701 MHz。B 在 clk50m 与 pixel51m25 域仍有 setup 违例，最坏 slack 为负 27.598 ns。接手后的工程重点是分析完整路径和约束、修正时钟及流水线，并重新验收。已有 Flash 运行成功不能替代 STA 收敛。
+
+A 已有 Flash 编程校验和显式从 Flash 重载成功记录；这组成功记录没有额外执行物理断电测试。B 当前 FS 可按版本头和所在工程归档，但没有在本次核对中对芯片读回身份；历史综合网表与用户后来重建的网表不同，因此不能把历史综合输入绑定当作本次用户 PnR 全过程的证明。相关范围写入来源记录，原报告按原文件保留。
+
+接手验收顺序：核对固件与上电 → 最低键及全键扫描 → 四音及以上和弦与松键 → 笛指法/气息 → 双鼓棒/校准/四区 → 双板断连与重连 → 触摸及动态文字 → 手机参数/键位/引导 → 录音、四轨与回传 → 128 频峰、实际采样率、总响应延迟及长期稳定性。每项记录版本、条件、结果和未通过项。
+
+三路延迟探针的起点不同：C18 在该行采样首次观察到某键由两触点全开变为任一触点闭合；D19 在独立两级同步后观察到任一笛键新按；C19 在 A 的 live 模式识别到左右 IMU 有效击打。它们都是设计一拍 20 ns 的脉冲，不直接代表声音延迟。测量时记录触发、阈值、最小/最大值及抖动，只补入探针之前尚未包含的前端时间。C18 之后的第二触点、力度及消抖等待已在 C18 至 DAC 测量内，不重复叠加。
+
+13 故障定位与后续开发入口
+
+现象 | 优先核对 | 代码或资料
+所有乐器无声 | 耳机/音箱实际出口、PCM5102A 供电与共地、静音/音量、I2S、回放是否覆盖。 | instrument_audio / pcm5102_i2s_tx
+LED 有反应但单键无声 | 先确认 D215 及组号；组 0 前 7 键有意禁用；区分触摸与实体结果，再查力度和 PCM。 | matrix_scan / midi_keyboard_synth_v2
+琴笛正常但鼓无声 | 退出测试回音乐模式；IMU 两路/校准、千兆链路、epoch、欠载和 PCM 块有效标记。 | instrument_air_drum / studio_drum_transport / studio_remote_drum
+屏幕空白或触摸异常 | HDMI/触摸是否接 B；B 的 DDR 初始化、USB 口、网络 peer 和多触点快照。 | studio_board_b / studio_asset_loader / usb_touch_host
+文字叠加或控件点不到 | 静态图集和动态字段是否都清理，触摸热区是否与画面一致，是否加载旧 assets。 | studio_renderer / studio_extra_graphics / studio_extra_control
+手机搜不到或连不上 | 名称过滤、Android 权限、模块服务/特征 UUID、通知订阅、模块供电与 UART 波特率。 | BleNames / BleTransport / studio_uart_router
+参数被拒绝或键位不更新 | TMCP 会话、参数版本、忙状态；停止引导/Loop/录制并松开琴键后重试。 | TmcpClient / tmcp_minlink_core / studio_keymap
+录音无法保存 | DDR ready、封存完成、槽与录音身份、回传断点及整段 CRC；不要发布半段 WAV。 | studio_recorder / RecorderClient / PianoRecorderProtocol
+
+改琴音色从 piano_voice_v2 与其参数表入手；改笛音色从 flute_voice_select 入手；改鼓分量和吞吐量从 air_drum_synth、air_drum_voice、air_drum_partial_bank 入手。增加手机参数时同步 A 参数表、App TangProtocolV1、参数 schema CRC、界面控件和能力回读，不能仅添加一个显示按钮。
+
+普通界面维护优先使用现有 RTL、图集及可复用字库/歌曲生成器。字库追加脚本默认使用随包冻结字形，不依赖原电脑字体；历史 16 张底图只作设计参考。若全面重做图集，需要另建立可复现的设计输入与生成流程，不要直接运行旧 D203 一次性覆盖脚本。
+
+当前包没有包含完整 PCB 原生工程、结构设计或传感器厂家工具；所核目录中的 3D_Models 没有可用文件。接手者需要这些原始硬件设计时，应向项目持有人补齐，不能把当前 CST 球位清单当作全部硬件设计资料。
+
+14 文件校验与参考索引
+
+Firmware 下两个 .fs 保留原名称，归档后应通过 MANIFEST_SHA256.txt 核对；复制到新电脑后也可用 PowerShell Get-FileHash -Algorithm SHA256 检查。改动源码或重建后必须使用新的版本标识与清单，不再沿用本交接包的哈希结论。
+
+A D215 固件 SHA256
+
+e222df1028f30b38fa79a5296c9da6554220f635b2dee7f6f361170bb82ff05c
+
+B D206 固件 SHA256
+
+16cb512602466caf91ff4fe791f35403526ddc4d7b0787916a34260ce93f70bf
+
+资料 | 用途
+A_D215_Pins.csv / B_D206_Pins.csv | 由当前 CST 解析的完整 IO 球位及属性。
+TMUI_Field_Map.csv | 双板快照关键位域；以两板 src/studio_net_protocol.vh 及生产/消费模块为准。
+App_Protocol_Constants.csv / App_Parameters.csv | 由当前 App TangProtocolV1 导出的常量与参数；协议实现同时查 A 的 tmcp 源文件。
+BuildEvidence/A_D215 与 B_D206 | 现有用户构建的 PnR、完整 STA、引脚及构建日志，保持报告原文件名以支持 HTML 内部跳转。
+BuildEvidence/A_Flash_D215 | A 既有成功烧录、显式重载和最终回读记录；归档未重复操作硬件。
+Reference/SourceFacts_A.json 与 B.json | 源码审计事实、引用入口、当前产物身份和验证范围。
+Reference/App_SourceFacts.json | App 文件、APK 资产一致性及构建边界。

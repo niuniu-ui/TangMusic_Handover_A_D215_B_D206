@@ -1,0 +1,923 @@
+{
+  "schema_version": 1,
+  "title": "TangMusic B D206 中文技术手册事实审计",
+  "audit_date": "2026-11-03",
+  "audit_kind": "静态源码/工程/当前构建产物只读审计；未运行综合、PnR、烧录、资源重生或实板测试。仅本审计文件写入workspace。",
+  "source_root": "D:/TangMusic_Files/TangMusic_Dual_Board/Delivery/B_Clean_UI_D206",
+  "paired_A_root": "D:/TangMusic_Files/TangMusic_Dual_Board/Delivery/A_KeyFix_D215",
+  "project": {
+    "project": "TangMusic_B_Clean_UI_D206.gprj",
+    "top": "studio_board_b",
+    "user_code": "0000D206",
+    "device": "GW5AST-138C",
+    "part": "GW5AST-LV138PG484AC1/I0",
+    "package": "PBGA484A / PG484A",
+    "selected_engineering_files": {
+      "src": 158,
+      "assets": 13,
+      "constraints": 2,
+      "gprj": 1,
+      "tcl": 2,
+      "impl_process_config": 1,
+      "total": 177
+    },
+    "build_order": [
+      "在Gowin 1.9.12.03或兼容版本中运行 synthesize_board_b.tcl 完成综合",
+      "再运行 route_board_b.tcl 完成布局布线；本审计未执行"
+    ],
+    "configuration": "保留impl/TangMusic_B_Clean_UI_D206_process_config.json，供GUI保留TopModule/USERCODE/CPU与SSPI GPIO等构建选项。两份TCL也显式设置相同字段，并cd到自身工程目录。",
+    "dependency_audit": "GPRJ116条启用文件全部存在，均位于src/constraints；29处include文件全部存在；有效HDL没有$readmemh/$readmemb/$fopen或外部文件路径依赖。ROM INIT已内嵌，DDR和PLL生成V/IP/模板保留。无需tests/tools/reports或旧impl网表即可按综合→PnR重建。",
+    "source_zip": "../TangMusic_B_Clean_UI_D206_Source.zip",
+    "source_zip_sha256": "cc23625b21eccc430f002267f9f5ea265f7df0e7ac0c1571808b7225b8e68e15",
+    "comparison": "当前src158/assets13/constraints2/GPRJ/两份TCL与原Source.zip逐字节一致。当前process_config与原ZIP字节不同，但解析后所有JSON字段键值完全相同，属于序列化格式差异；不能笼统写177文件全部与历史ZIP字节相同。",
+    "config_delivery_sha256": "fbbe2a24250c092197a4702e44ca30a672811113a32eab4f4cda197a6dbfbd15",
+    "config_source_zip_sha256": "d9b82fc173bb16b0ed7447452b4f475ef5e901c24d0da79f201ceb847aac024a",
+    "evidence": [
+      "TangMusic_B_Clean_UI_D206.gprj:5",
+      "synthesize_board_b.tcl:1",
+      "route_board_b.tcl:1",
+      "impl/TangMusic_B_Clean_UI_D206_process_config.json"
+    ]
+  },
+  "architecture": [
+    {
+      "module": "studio_board_b",
+      "role": "B顶层：50MHz复位、视频/USB时钟、双USB触摸、触摸代理、A/B私有以太网、空气鼓合成回传、A状态显示、原子CDC、DDR界面贴图、HDMI输出。无最终DAC输出、蓝牙模块或实体琴/笛/鼓传感器引脚；这些位于A。src内若有同名公用音频/录音模块，不代表已在B顶层实例化。",
+      "evidence": [
+        "src/studio_board_b.v:1",
+        "src/studio_board_b.v:3",
+        "src/studio_board_b.v:31",
+        "src/studio_board_b.v:82",
+        "src/studio_board_b.v:91",
+        "src/studio_board_b.v:353"
+      ]
+    },
+    {
+      "module": "usb_touch_host / ui_cdc_snapshot / studio_touch_urgent",
+      "role": "USB host0/1各取最多10触点；优先选成功连接的口，原子274bit包从USB60MHz跨至50MHz。包含10down、10×10bit x、10×10bit y、10×6bit ID与两个2bit状态。代理后的变化可触发urgent发送。",
+      "evidence": [
+        "src/studio_board_b.v:31",
+        "src/studio_board_b.v:42",
+        "src/studio_board_b.v:49",
+        "src/studio_board_b.v:79"
+      ]
+    },
+    {
+      "module": "studio_extra_control / studio_extra_graphics / studio_game_songs.vh",
+      "role": "B本地节奏练习、声音实验室测试模式及动态图形；不替换A上的主控制器。共享每首练习BPM与音符onset/duration，四拍预备，暂停冻结共享时间线，判定支持组合按键及按错/漏按。仅练习音区组2且A存活可开始，断连/错音区暂停。",
+      "evidence": [
+        "src/studio_extra_control.sv:14",
+        "src/studio_extra_control.sv:92",
+        "src/studio_extra_control.sv:147",
+        "src/studio_extra_control.sv:155",
+        "src/studio_extra_graphics.sv:27"
+      ]
+    },
+    {
+      "module": "studio_remote_drum / air_drum_synth / air_drum_voice / air_drum_partial_bank",
+      "role": "由A传来鼓事件与样本标签；B生成并缓冲16sample PCM块回传A。原32个主振荡器与96个附加独立DDS部分音相加，见audio部分。",
+      "evidence": [
+        "src/studio_remote_drum.sv:1",
+        "src/studio_remote_drum.sv:42",
+        "src/air_drum_synth.v:19",
+        "src/air_drum_partial_bank.sv:2"
+      ]
+    },
+    {
+      "module": "studio_remote_display / ui_scope_capture / ui_lissajous_capture / studio_lab_fft",
+      "role": "消费A最终输出的展示PCM副本；波形、李萨如图和128点FFT只用于显示。B回放副本不驱动DAC，不是独立音频采样时钟。FFT只公布32根柱；不能从该图独立分辨128条37Hz间隔测试频率。",
+      "evidence": [
+        "src/studio_remote_io.v:21",
+        "src/studio_remote_io.v:40",
+        "src/studio_lab_fft.sv:1",
+        "src/studio_lab_fft.sv:100",
+        "src/studio_board_b.v:292"
+      ]
+    },
+    {
+      "module": "studio_renderer / studio_artwork_ddr / studio_asset_loader / studio_cache_ram / record_ddr_bridge / DDR3_Memory_Interface_Top",
+      "role": "16场景贴图与动态文本/统计合成；默认ARTWORK_DDR=1。pROM保存压缩资源流，加载器解压/CRC后写入B DDR3，像素缓存读取；B DDR用于界面，并未接A的录音/四轨操作路径。",
+      "evidence": [
+        "src/studio_renderer.sv:2",
+        "src/studio_renderer.sv:47",
+        "src/studio_asset_config.vh:2",
+        "src/studio_board_b.v:363",
+        "src/studio_board_b.v:370"
+      ]
+    },
+    {
+      "module": "video_timing / hdmi_tx / video_diagnostics / ws2812_status",
+      "role": "1024×600有效显示，H总1344/V总635；像素51.25MHz、串行256.25MHz，约60Hz；诊断UART115200 8N1。RGB红表示链路未就绪、绿为A状态有效、蓝为物理链路就绪但A数据未存活。",
+      "evidence": [
+        "src/video_timing.v:3",
+        "src/video_timing.v:16",
+        "src/video_diagnostics.v:2",
+        "src/studio_board_b.v:104"
+      ]
+    }
+  ],
+  "ui": {
+    "page_map": {
+      "0": "总览：混音音量、波形、李萨如",
+      "1": "电子琴与音区/音色选择",
+      "2": "曲谱引导，并可进入B本地节奏练习",
+      "3": "互联/录音控制面板",
+      "4": "声音实验室",
+      "5": "空气鼓",
+      "6": "效果",
+      "7": "电子笛"
+    },
+    "page_map_evidence": [
+      "src/studio_renderer.sv:47",
+      "src/studio_board_b.v:316"
+    ],
+    "D206_scope": "D206相对D205只改显示/字库：lab删除下方UNITS、Fs des、kOSC/s des及底部状态；删FFT128与381Hz说明；保留频率轴和左下采样率文字、活跃声部标题/合计/三乐器/鼓近期峰；钢琴名称改机械钢琴、电子合成琴。没有新增振荡器，也没有更改A音频/协议。",
+    "touch_rules": [
+      {
+        "rule": "一般触摸由B原子接收并通过safe_touch发A执行。节奏练习mode1屏蔽远端触摸，防页面本地按钮误触A。",
+        "evidence": [
+          "src/studio_extra_control.sv:35",
+          "src/studio_extra_control.sv:72"
+        ]
+      },
+      {
+        "rule": "删除李萨如延时入口后，page0 x[311,367),y[89,133)每个触点被吞；显示延迟本地固定2，运行/暂停按钮仍存在。",
+        "evidence": [
+          "src/studio_extra_control.sv:52",
+          "src/studio_board_b.v:95"
+        ]
+      },
+      {
+        "rule": "鼓校准整块按钮page5 x[171,284),y[145,190)映射到A已存在的(220,166)命令区域，保留其他触点与ID。反馈1200ms的“请求已发”只表示请求已触发，不是校准成功ACK。",
+        "evidence": [
+          "src/studio_extra_control.sv:58",
+          "src/studio_extra_control.sv:124",
+          "src/studio_renderer.sv:208"
+        ]
+      },
+      {
+        "rule": "page3去除右上旧信息图标对应触点（x>=966,y[14,58)），逐触点屏蔽使第二手指的其他录音控件仍可转发。视觉改动限page3 header x[805,1001),y[8,64)；不能声称page3整页字节/像素毫无变化。",
+        "evidence": [
+          "src/studio_extra_control.sv:66",
+          "src/studio_renderer.sv:183"
+        ]
+      },
+      {
+        "rule": "实验室只接受新按下触点选择MUSIC/32/64/128，按住或拖动不循环切换；控件触点不传给A。离开实验室、断连或复位回MUSIC。",
+        "evidence": [
+          "src/studio_extra_control.sv:44",
+          "src/studio_extra_control.sv:73",
+          "src/studio_extra_control.sv:80"
+        ]
+      }
+    ],
+    "practice": {
+      "count_in_beats": 4,
+      "hit_y": 395,
+      "perfect_window_ms": 90,
+      "octave_group": 2,
+      "pieces": [
+        {
+          "title": "音阶练习",
+          "bpm": 100
+        },
+        {
+          "title": "稻香（节奏改编片段）",
+          "bpm": 96
+        },
+        {
+          "title": "晴天（节奏改编片段）",
+          "bpm": 100
+        },
+        {
+          "title": "起风了（节奏改编片段）",
+          "bpm": 84
+        },
+        {
+          "title": "琵琶曲（节奏改编片段）",
+          "bpm": 108
+        },
+        {
+          "title": "小星星（熟悉旋律片段）",
+          "bpm": 100
+        },
+        {
+          "title": "欢乐颂（熟悉旋律片段）",
+          "bpm": 120
+        },
+        {
+          "title": "八键练习（本地片段改编）",
+          "bpm": 112
+        }
+      ],
+      "caveat": "B的本地简化八键练习，不是完整原曲转写；BPM为本曲练习速度，不宣称原曲原速。与App上传A的曲谱存储/引导是不同实现。",
+      "evidence": [
+        "tools/generate_game_songs.py:1",
+        "tools/generate_game_songs.py:11",
+        "src/studio_extra_control.sv:98",
+        "src/studio_extra_control.sv:147"
+      ]
+    },
+    "assets": {
+      "scenes": 16,
+      "raw_bytes": 469184,
+      "packed_bytes": 160943,
+      "tiles": 9906,
+      "segments": 1866,
+      "raw_crc32": "f1e51e1f",
+      "ddr_base_byte": "0x02000000",
+      "evidence": [
+        "src/studio_asset_config.vh:2"
+      ]
+    },
+    "font": {
+      "glyphs": 252,
+      "banks": 16,
+      "labels": {
+        "95": "机械钢琴",
+        "96": "电子合成琴"
+      },
+      "scope": "250既有glyph及0..94既有label保留；只追加械/合两glyph和95/96标签。音色算法名称变化不等于音色算法变化。",
+      "evidence": [
+        "tools/append_piano_labels_d206.py:69",
+        "tools/append_piano_labels_d206.py:89",
+        "src/studio_renderer.sv:216"
+      ]
+    }
+  },
+  "audio": {
+    "actual_oscillator_structure": "32主音符槽，每槽一个独立phase/FCW/envelope/gain；额外96个DDS分量（每槽3个），每分量在112bit RAM内独立存phase32、FCW32、envelope16、gate17、ADSR3、velocity8等。component0占位不运算附加音，归主引擎。相同乘法器按时分复用不减少独立状态数量。",
+    "normal_drum": "普通敲击分配32槽轮转；一击触发主分量与3个独立部分音，附加部分音各有不同时值/ADSR/频率，实际eligible计数依包络×力度门限，不能简单用“音符槽×4”代替。bank0鼓含sine/噪声与下滑，bank1有钟声音色；原bell的二次谐波从共享phase位派生，不另报一个独立振荡器。",
+    "modes": {
+      "0": "MUSIC：正常空气鼓事件",
+      "1": "32：32主DDS持续测试",
+      "2": "64：32主DDS+32附加DDS持续测试",
+      "3": "128：32主DDS+96附加DDS持续测试"
+    },
+    "test_frequencies": "f(i)=220+37×i Hz，i=0..N-1；128模式220..4919Hz。按设计Fs计算FCW，需从最终输出长采样与实际Fs测量核实实板峰及频率。",
+    "test_gain": "测试主/附加正弦先右移2，主与附加未饱和和相加后测试总和再右移2；音乐总和按5/8。随后clip16。测试模式旁路空气鼓delay/master boost，忽略/清理测试期间鼓事件，退出建立新的事件基线。",
+    "deadline": "partial bank每地址READ/BEND/WRITE，加guard/drain约396个50MHz时钟；wrapper保留512时钟渲染间距（10.24us）。重叠sample_ce、事件邮箱/队列超限会标fault。这个预算是RTL结构，不是当前STA收敛证明。",
+    "sampling": "B以A的样本标签推进，按16sample块回传。最终音频采样来自A的50MHz/1024，名义48828.125Hz；B的512clk渲染和display-only回放不是DAC Fs。该标称值不是实测采样率。",
+    "final_mix": "B所有鼓分量混成单一路16bit PCM回A，A D215将piano效果/琴音量后PCM+flute PCM+remote drum PCM加成18bit并clip16，叠加四轨、总音量后送最终I2S；录音取最终dac_sample。测试时留在lab，可同时用A实体钢琴/笛演奏；A未因B test_mode静音钢琴/笛。录音回放选择器会覆盖实时mix，全局静音/各路音量仍生效，三路全幅不能保证不削顶。",
+    "count_semantics": "UI空气鼓值取真实主active数+eligible附加数；断连、块无效、epoch/模式变化时顶层gating清0。近期峰用10个100ms桶，约0.9–1.0s峰，过桶失效；不是终身峰/精确滑窗。UI合计可显示32琴+128鼓+1笛=161，但不同单位混合，不可当作161个均已可闻独立振荡器的证明。",
+    "evidence": [
+      "src/air_drum_voice.v:12",
+      "src/air_drum_voice.v:60",
+      "src/air_drum_voice.v:79",
+      "src/air_drum_synth.v:19",
+      "src/air_drum_partial_bank.sv:2",
+      "src/air_drum_partial_bank.sv:19",
+      "src/air_drum_partial_bank.sv:204",
+      "src/air_drum_partial_bank.sv:282",
+      "src/studio_remote_drum.sv:61",
+      "src/studio_remote_drum.sv:70",
+      "src/studio_remote_drum.sv:98",
+      "src/studio_board_b.v:116",
+      "src/studio_drum_activity.sv:4",
+      "src/studio_extra_graphics.sv:103",
+      "../A_KeyFix_D215/src/instrument_audio.v:145",
+      "../A_KeyFix_D215/src/instrument_audio.v:175"
+    ]
+  },
+  "link_protocol": {
+    "layer": "私有二层Ethernet/RGMII，不使用IP/UDP/TCP；板载RTL8211F、MDIO PHY地址1。",
+    "role": "A=ROLE0/B=ROLE1，B顶层显式ROLE1；源MAC A02:54:4D:00:00:01/B02:54:4D:00:00:02，目的广播FF:FF:FF:FF:FF:FF。",
+    "frame": {
+      "ether_type": "0x88B5",
+      "magic": "TMUI",
+      "version": 1,
+      "payload_bytes": 256,
+      "header_before_payload_bytes": 30,
+      "body_bytes": 286,
+      "frame_with_fcs_bytes": 290,
+      "on_wire_with_preamble_sfd_bytes": 298,
+      "sequence": "32bit big-endian及其按字节取反；payload内多字节字段采用little-endian",
+      "fcs": "标准反射Ethernet CRC32，poly0xEDB88320，初始0xFFFFFFFF、输出取反；接收残值0xDEBB20E3"
+    },
+    "transport": "TX持有mailbox+request/ack；RX双bank RAM只提交完整长度/对端header/无wireerror/CRC正确的整帧，host读完256bytes才ack。队列满计drop。PERIOD在display_link默认2500个50MHzclk（约50us），urgent可提前请求，minimum_gap999约20us。实际往返/延迟不能仅由该参数保证。",
+    "phy": "50MHz除2输出25MHz PHY参考；PLL产生RGMII发送时钟；仅当config_done&&mdio_ok&&link&&speed==2(1000M)有效。启动等5,000,000时钟约100ms。RTL8211F page0xD08寄存器17置bit8(TX delay)，寄存器21清bit3(RX delay)，并回读确认；MDC HALF25对应1MHz。",
+    "peer_timeout": "A/B消费者TIMEOUT5,000,000个50MHz时钟约100ms。B断连清显示/peer与sample queue；不直接改变A物理乐器时钟。",
+    "A_to_B_fields": [
+      [
+        "bits1257:0",
+        "显示状态"
+      ],
+      [
+        "bits1535:1280",
+        "16×signed16展示PCM（A最终dac副本）"
+      ],
+      [
+        "bits1567:1536",
+        "展示PCM块编号"
+      ],
+      [
+        "bits1599:1568",
+        "A audio/requested样本索引"
+      ],
+      [
+        "bits1855:1600",
+        "4×64bit鼓事件槽"
+      ],
+      [
+        "bits1863:1856",
+        "最新事件8bit sequence"
+      ],
+      [
+        "bits1871:1864",
+        "epoch"
+      ],
+      [
+        "bits1887:1872",
+        "0xD2A1兼容标记"
+      ],
+      [
+        "bits1927:1920",
+        "signed8鼓bend"
+      ],
+      [
+        "bits1935:1928",
+        "鼓delay参数"
+      ],
+      [
+        "bits1967:1936",
+        "A鼓transport underrun计数"
+      ]
+    ],
+    "B_to_A_fields": [
+      [
+        "bits273:0",
+        "274bit处理后的触摸包"
+      ],
+      [
+        "bits319:288",
+        "回传16sample块起始样本标签"
+      ],
+      [
+        "bits575:320",
+        "16×signed16鼓PCM"
+      ],
+      [
+        "bits591:576",
+        "块有效0xB2D1；无效0"
+      ],
+      [
+        "bits599:592",
+        "epoch"
+      ],
+      [
+        "bits639:608",
+        "32bit音符active mask，测试模式为0而不是分量数"
+      ],
+      [
+        "bit640",
+        "鼓fault"
+      ]
+    ],
+    "drum_event_slot": "每64bit事件中sequence[7:0]、16bit样本时间[23:8]、event_data[42:24]；event_data={bank1,expression8,zone2,velocity8}。最多保留4个事件；backlog>4或样本落后>256触发重同步/fault。",
+    "display_pcm": "B展示PCM每512clk回放一个样本，仅为波形/FFT/李萨如处理留预算；不可把该副本节奏解释为实际音频重采样或额外DAC。",
+    "evidence": [
+      "src/studio_net_protocol.vh:1",
+      "src/studio_display_link.v:2",
+      "src/studio_display_link.v:11",
+      "src/studio_display_link.v:22",
+      "src/studio_net_frames.v:32",
+      "src/studio_net_frames.v:141",
+      "src/studio_remote_io.v:21",
+      "src/studio_remote_drum.sv:23",
+      "src/studio_remote_drum.sv:125",
+      "src/studio_board_b.v:87",
+      "src/phy_config.v:9",
+      "src/phy_config.v:23",
+      "src/mdio_master.v:1"
+    ]
+  },
+  "pin_notes": {
+    "source": "constraints/studio_board_b.cst",
+    "interpretation": "以下为当前CST FPGA球位，不是排针编号；仅按顶层实际端口描述。CST保留的早期键盘/蓝牙/外接音频等注释不构成B的实际接线证据。U15是否可接普通排针不能从本CST推断。",
+    "important_groups": {
+      "clock_reset_status": {
+        "clk": "V22 / 50MHz / LVCMOS33",
+        "key_n": "AB13 / pull-up / active-low",
+        "rgb_led": "J16"
+      },
+      "hdmi": {
+        "blue_data0_pair": "J14,H14",
+        "green_data1_pair": "J15,H15",
+        "red_data2_pair": "K17,J17",
+        "clock_pair": "G15,G16",
+        "hpd": "K13",
+        "aux_input": "K14",
+        "diagnostic_uart_tx": "U15 / 115200 8N1"
+      },
+      "usb": {
+        "USB1_DP_DM": "M15,M16",
+        "USB2_DP_DM": "H13,G13"
+      },
+      "rgmii": {
+        "phy_clk": "V19",
+        "phy_rst_n": "W20",
+        "tx_clk": "F20",
+        "tx_ctl": "F21",
+        "txd0_3": "D21,E21,D22,E22",
+        "rx_clk": "G21",
+        "rx_ctl": "G22",
+        "rxd0_3": "F18,E18,C22,B22",
+        "mdc": "V18",
+        "mdio": "U22"
+      },
+      "ddr": "完整固定DQ[31:0]/ADDR[14:0]/BANK[2:0]/DQS[3:0]等球位及PHY位置必须原样保留CST；DDR为SSTL15/BANK_VCCIO1.5，非普通3.3V外设。"
+    },
+    "evidence": [
+      "constraints/studio_board_b.cst:2",
+      "constraints/studio_board_b.cst:27",
+      "constraints/studio_board_b.cst:35",
+      "constraints/studio_board_b.cst:46",
+      "constraints/studio_board_b.cst:215",
+      "constraints/studio_board_b.cst:244"
+    ],
+    "all_active_cst_io_locations": {
+      "clk": "V22",
+      "key_n": "AB13",
+      "rgb_led": "J16",
+      "tmds_data_p[0]": "J14,H14",
+      "tmds_data_p[1]": "J15,H15",
+      "tmds_data_p[2]": "K17,J17",
+      "tmds_clk_p": "G15,G16",
+      "usb1_dp": "M15",
+      "usb1_dm": "M16",
+      "usb2_dp": "H13",
+      "usb2_dm": "G13",
+      "hdmi_hpd": "K13",
+      "hdmi_aux": "K14",
+      "debug_uart_tx": "U15",
+      "ddr_bank[2]": "M6",
+      "ddr_bank[1]": "P2",
+      "ddr_bank[0]": "P5",
+      "ddr_addr[14]": "D1",
+      "ddr_addr[13]": "K1",
+      "ddr_addr[12]": "K4",
+      "ddr_addr[11]": "H3",
+      "ddr_addr[10]": "L1",
+      "ddr_addr[9]": "H5",
+      "ddr_addr[8]": "J5",
+      "ddr_addr[7]": "J1",
+      "ddr_addr[6]": "G3",
+      "ddr_addr[5]": "H2",
+      "ddr_addr[4]": "J2",
+      "ddr_addr[3]": "J4",
+      "ddr_addr[2]": "G2",
+      "ddr_addr[1]": "K2",
+      "ddr_addr[0]": "M1",
+      "ddr_odt": "M2",
+      "ddr_cke": "K6",
+      "ddr_we": "M5",
+      "ddr_cas": "L4",
+      "ddr_ras": "L5",
+      "ddr_cs": "P4",
+      "ddr_reset_n": "L6",
+      "ddr_ck": "L3,K3",
+      "ddr_dm[3]": "W1",
+      "ddr_dm[2]": "T6",
+      "ddr_dm[1]": "V7",
+      "ddr_dm[0]": "AA4",
+      "ddr_dq[31]": "Y2",
+      "ddr_dq[30]": "U1",
+      "ddr_dq[29]": "V2",
+      "ddr_dq[28]": "U2",
+      "ddr_dq[27]": "U3",
+      "ddr_dq[26]": "T1",
+      "ddr_dq[25]": "Y1",
+      "ddr_dq[24]": "W2",
+      "ddr_dq[23]": "T5",
+      "ddr_dq[22]": "V5",
+      "ddr_dq[21]": "T4",
+      "ddr_dq[20]": "Y6",
+      "ddr_dq[19]": "R4",
+      "ddr_dq[18]": "U6",
+      "ddr_dq[17]": "R6",
+      "ddr_dq[16]": "U5",
+      "ddr_dq[15]": "Y9",
+      "ddr_dq[14]": "AB6",
+      "ddr_dq[13]": "W9",
+      "ddr_dq[12]": "AB8",
+      "ddr_dq[11]": "Y7",
+      "ddr_dq[10]": "AB7",
+      "ddr_dq[9]": "Y8",
+      "ddr_dq[8]": "AA8",
+      "ddr_dq[7]": "AB1",
+      "ddr_dq[6]": "AB5",
+      "ddr_dq[5]": "AB2",
+      "ddr_dq[4]": "AA1",
+      "ddr_dq[3]": "V4",
+      "ddr_dq[2]": "AA5",
+      "ddr_dq[1]": "AB3",
+      "ddr_dq[0]": "Y4",
+      "ddr_dqs[3]": "R3,R2",
+      "ddr_dqs[2]": "W6,W5",
+      "ddr_dqs[1]": "V9,V8",
+      "ddr_dqs[0]": "Y3,AA3",
+      "phy_clk": "V19",
+      "phy_rst_n": "W20",
+      "tx_clk": "F20",
+      "tx_ctl": "F21",
+      "txd[0]": "D21",
+      "txd[1]": "E21",
+      "txd[2]": "D22",
+      "txd[3]": "E22",
+      "rx_clk": "G21",
+      "rx_ctl": "G22",
+      "rxd[0]": "F18",
+      "rxd[1]": "E18",
+      "rxd[2]": "C22",
+      "rxd[3]": "B22",
+      "phy_mdc": "V18",
+      "phy_mdio": "U22"
+    }
+  },
+  "current_build_artifacts": {
+    "caveat": "本节记录审计时Delivery里用户后来构建的当前impl文件，不等同于最初D206交付时历史报告所称“PnR未运行/无FS”。",
+    "fs": "impl/pnr/TangMusic_B_Clean_UI_D206.fs",
+    "bytes": 39984213,
+    "fs_sha256": "16cb512602466caf91ff4fe791f35403526ddc4d7b0787916a34260ce93f70bf",
+    "fs_first_24_lines_sha256": "c56f1bc33e0fcd3fbf27d2e209a5c4802775e564b7c966d00be01634ffc73b21",
+    "fs_header_created_time": "Tue Nov 3 02:13:17 2026",
+    "fs_header": {
+      "tool": "V1.9.12.03 (64-bit) (86715)",
+      "device": "GW5AST-138C-PBGA484A",
+      "part": "GW5AST-LV138PG484AC1/I0",
+      "user_code": "0x0000d206",
+      "compress": "OFF",
+      "crc_check": "ON",
+      "security_bit": "ON"
+    },
+    "bin_sha256": "4fec6938099ca50eb9ec0d50f395bb193a6a6976a495c095e92a389d76f63030",
+    "binx_sha256": "0bb95ae8c1fc1a257ff80765e186a330fff786aabec79c8981108b15fcc798a1",
+    "vg_sha256": "76c618d5a7fd93b2f36ed66d1c93cc8e3335ef87b38df0252692291fc46e803b",
+    "vg_created_time": "2026-11-03 01:12:42",
+    "pnr_finished_time": "2026-11-03 02:13:32",
+    "timing": {
+      "setup_violating_endpoints": 342,
+      "hold_violating_endpoints": 0,
+      "clk50m": {
+        "tns_ns": -856.696,
+        "endpoints": 209
+      },
+      "pixel51m25": {
+        "tns_ns": -984.366,
+        "endpoints": 133
+      },
+      "worst_setup_slack_ns": -27.598,
+      "worst_path": "drum_sound/engine_mode_0_s1/Q -> drum_activity/peak_count_1_s0/D",
+      "pixel_worst_slack_ns": -14.716,
+      "pixel_worst_path": "extra_visible_142_s0/Q -> renderer/extra_color_10_s0/D",
+      "conclusion": "PnR完成、位流生成；STA未收敛，不能写时序通过或目标频率全部满足。"
+    },
+    "provenance_confirmed": "GPRJ/TCL/process_config/FS身份均为D206。当前VG源文件index指此Delivery/src，当前PnR cmd.do明确使用当前VG/CST/SDC；日志记录完成。reports/synthesis_inputs.json的175个输入SHA逐一匹配当前源/资产/约束。",
+    "provenance_limit": "历史synthesis_inputs记录的netlist SHA前缀8c19d669与当前VG不同，不能以历史冻结快照证明此次用户手工重建全过程输入未变。未做当前FS对芯片配置读回，也未实测本版功能/音频/时序/断电启动。",
+    "evidence": [
+      "impl/pnr/TangMusic_B_Clean_UI_D206.fs:4",
+      "impl/pnr/TangMusic_B_Clean_UI_D206.fs:11",
+      "impl/pnr/TangMusic_B_Clean_UI_D206.fs:24",
+      "impl/gwsynthesis/TangMusic_B_Clean_UI_D206.vg:4",
+      "impl/pnr/cmd.do:1",
+      "impl/pnr/TangMusic_B_Clean_UI_D206_tr_content.html:90",
+      "impl/pnr/TangMusic_B_Clean_UI_D206_tr_content.html:306",
+      "impl/pnr/TangMusic_B_Clean_UI_D206_tr_content.html:433",
+      "reports/synthesis_inputs.json"
+    ]
+  },
+  "development_tools": {
+    "principle": "编译交接以冻结src/assets/CST/SDC/GPRJ/TCL/config为准。开发工具可随包，但不带Icarus、波形查看器、仿真bench、测试/截图/打包软件。生成器会覆盖资源，应在副本使用；未在本次审计执行生成器，不承诺全量重生后逐字节相同。",
+    "ready_to_include": [
+      {
+        "files": [
+          "tools/append_piano_labels_d206.py",
+          "tools/emit_rom.py",
+          "tools/reference/d205_font_250_baseline.json"
+        ],
+        "purpose": "D206中文字库/标签确定性重生；冻结的250glyph原hex/旧label源与两个新字栅格全部内嵌JSON。",
+        "dependencies": "Python3.10+标准库；默认不依赖外部字体/Pillow。可选--verify-raster才需Pillow及记录的Windows字体。脚本写reports/font_labels_D206.json，属于生成结果报告，不需附测试软件。",
+        "evidence": [
+          "tools/append_piano_labels_d206.py:19",
+          "tools/append_piano_labels_d206.py:67",
+          "tools/append_piano_labels_d206.py:90"
+        ]
+      },
+      {
+        "files": [
+          "tools/generate_game_songs.py"
+        ],
+        "purpose": "八首简化练习的BPM/时值/共享onset等VH。",
+        "dependencies": "Python标准库；曲目数据内嵌，自行创建reports/rhythm_timing/timing_manifest.json，无需旧报告输入。",
+        "evidence": [
+          "tools/generate_game_songs.py:13",
+          "tools/generate_game_songs.py:95"
+        ]
+      }
+    ],
+    "incomplete_or_legacy": [
+      {
+        "file": "tools/append_ui_labels.py",
+        "problem": "读reports/extra_ui_labels.json，而该文件当前D206中缺失。不能直接运行宣称自包含。D206冻结baseline JSON已有完整旧标签源，当前D206字体脚本能生成86/87等旧标签，因此不必再执行旧补丁。",
+        "suggestion": "在开发说明明确旧脚本非当前重生入口；若要保留可运行性，补冻结glyph元数据并在新包副本调整为明确的开发reference路径，勿引入整个测试reports。",
+        "evidence": [
+          "tools/append_ui_labels.py:5"
+        ]
+      },
+      {
+        "file": "上游B/tools/generate_extra_font.py",
+        "problem": "当前D206没附；旧脚本硬编码D:/two dimension/fpga/gowin/138k/all/TangMusic_Studio_138C及Windows字体，依赖旧ui_labels.json/emit_rom.py，不可直接充作新包完整入口。",
+        "suggestion": "优先使用D206自包含冻结baseline方案；若恢复全历史生成链，必须将基线数据和emitter固定到包内并记录hash。"
+      },
+      {
+        "file": "上游B/tools/generate_game_labels.py",
+        "problem": "旧脚本依赖reports/extra_ui_labels.json、msyh.ttc/consola.ttf，还读写旧工程名TangMusic_Board_B.gprj；直接运行会覆盖旧标签/字体，不应作为D206现行入口。",
+        "suggestion": "大数字字体可直接由assets/studio_large_font.hex+emit_rom.py重生；若提供编辑字形入口应单独封装，冻结字形栅格/字体来源，避免旧GPRJ副作用。"
+      },
+      {
+        "file": "src/studio_lab_twiddle.vh",
+        "problem": "当前有完整生成结果，但D206没有生成器；上游B/tools/generate_lab_twiddle.py为短小自包含math脚本。",
+        "suggestion": "可在新交接包开发工具中补该脚本并对生成内容只读验证后标注；不是当前GPRJ构建依赖。"
+      },
+      {
+        "file": "其他src头注tools/generate_audio_tables.py / generate_fx_params.py / generate_key_velocity_curve.py / generate_keyboard_tables.py / generate_spectrum_coeffs.py / pack_artwork.py",
+        "problem": "当前D206未附这些历史生成器；生成后的V/VH数据完整。pack_artwork.py注释由emit_rom.py模板沿用，不能据此误认综合时需该文件。",
+        "suggestion": "若承诺所有历史生成链完整，需逐项补源码及输入/验证匹配；否则文档明确当前冻结V/VH为权威可编译源，提供必要现行UI/歌曲生成入口即可，不宣称历史工程工具全恢复。"
+      }
+    ],
+    "exclude_from_code_handover": [
+      "tests/**",
+      "tools/check_artwork_ddr.py",
+      "tools/parallel_render_scenarios.py",
+      "tools/render_polished_ui.py",
+      "tools/render_ui_variants.py",
+      "tools/run_toolchain.py",
+      "tools/verify_*.py",
+      "tools/package_*.py",
+      "Gowin生成的仿真运行器/VVP/临时日志（若用户仅要代码和技术文档）"
+    ],
+    "legacy_asset_pipeline_audit_only": {
+      "files": [
+        "tools/build_ui_assets.py",
+        "tools/asset_codec.py",
+        "tools/emit_rom.py",
+        "tools/reference/00.png .. 15.png",
+        "src/studio_colors.vh"
+      ],
+      "purpose": "D203继承的16场景贴图tile/压缩流/DDR配置生成；当前动态D205/D206显示修补由RTL覆盖。",
+      "dependencies": "Python+numpy+Pillow；硬编码C:/Windows/Fonts/msyh.ttc。PNG16个已存在。需说明字体依赖或将字体路径参数化/冻结文字栅格，不能只拷脚本而漏PNG。",
+      "evidence": [
+        "tools/build_ui_assets.py:8",
+        "tools/build_ui_assets.py:18",
+        "tools/build_ui_assets.py:32",
+        "tools/build_ui_assets.py:138"
+      ],
+      "delivery_policy": "Do not include this legacy executable pipeline in the code handover. Keep only its historical PNG design inputs under DesignReference with a notice that current src/assets/RTL are authoritative."
+    },
+    "handover_selected_development_files": [
+      "tools/append_piano_labels_d206.py",
+      "tools/emit_rom.py",
+      "tools/reference/d205_font_250_baseline.json",
+      "tools/generate_game_songs.py"
+    ],
+    "design_reference_policy": "Copy tools/reference/00.png..15.png separately to DesignReference as historical design input only. Do not describe them as current rendered screenshots or as a complete D206 regeneration pipeline."
+  },
+  "verification_boundaries": {
+    "static_or_report_supported": [
+      "工程依赖闭合、源码与已确认ZIP比对",
+      "独立DDS状态结构与测试模式数量",
+      "标准私有Ethernet帧格式、事件与PCM字段",
+      "B回传单PCM在A现有钢琴/笛/鼓最终mix路由",
+      "历史RTL报告及示例遥测预览的存在"
+    ],
+    "not_claimed": [
+      "当前FS的物理板端读回身份",
+      "当前D206新实板128频峰/可闻性/端到端<=5ms",
+      "实际DAC LRCK采样率实测",
+      "UI161表示161个全部可闻独立振荡器",
+      "B512clk等于DAC采样周期",
+      "STA通过",
+      "所有历史资产/音频生成工具已齐全或本次重生逐字节相同"
+    ],
+    "history": "reports/validation_summary_D206.json与source_manifest的PnR not run/no_firmware仅描述原交付时范围；当前用户手工生成的impl产物应单独列出并披露当前setup违例。"
+  },
+  "audit_generated_utc": "2026-11-03T09:18:51.378041+00:00",
+  "engineering_file_hashes": {
+    "assets/studio_asset_stream.hex": "d57c1c8de89ce5babd4ae727ee80b8cac9000db5365cb445d4de08561f657f96",
+    "assets/studio_ddr_lz4.bin": "b2de06e40ce81e30b7f0c7a0a8dc835bdd8ef4ac4369f4691d4eb54bcad5695c",
+    "assets/studio_ddr_raw.bin": "331accd7fc34f39ce09e6ea236f1d7714108909a127bc5859d91af9c82841386",
+    "assets/studio_font.hex": "dca22c87a5afd039a75ac534d31a9e94aa31f7dc1731d7dc4648bcfec7d0b9f9",
+    "assets/studio_large_font.hex": "f25d51fe492dc694811f239d173940aa5b6190294c4e6c5eb7414c6e46a3f123",
+    "assets/studio_palettes.hex": "ce8b03ff01abc9c156d2c8a5ae362ed11e2da6f39d99ccb97400a4c9ffff166c",
+    "assets/studio_palettes.json": "cd34ecc7241f890671560352cab3e32b339e0665ad6fb9c727943d30c40ca735",
+    "assets/studio_pixels.hex": "d1ae89acd48a42ffadc36c2f0644b02853a3238fa6ae7b89c5e0e910106d62b1",
+    "assets/studio_pixels.json": "df551367646108e52050a4ade124c38941d83bf4b9ebff9fe06681e20c298bd7",
+    "assets/studio_rows.hex": "15dbf1b3b5f5133c8beb9662407355a9a0fc89bb0d2947b9b6d71c144bc04d55",
+    "assets/studio_rows.json": "9508db45819150dd997b9e6c23fd41d8fb3656c1172196d74d64e6c30880fa01",
+    "assets/studio_tiles.hex": "87680604c3f93fe573e1fd4712cf5babdea60b3a4083a62176366030cae4b7d1",
+    "assets/studio_tiles.json": "d1279006e2eda9675b3bbfabf8c733478db63f22d77161767bc772bc7101c9b0",
+    "constraints/studio_board_b.cst": "9744fec6a6611ad4fc093ce8d227dfd92056182d3be2bf97ed333ce423a34ce1",
+    "constraints/studio_board_b.sdc": "7903a444f8e9ede755980c10991092a0d97215854d71088ea98ca454db4d8e8f",
+    "impl/TangMusic_B_Clean_UI_D206_process_config.json": "fbbe2a24250c092197a4702e44ca30a672811113a32eab4f4cda197a6dbfbd15",
+    "route_board_b.tcl": "00d8d254457c9458da8c1defd4de08fb139659924bad04f0e7046142146c62ec",
+    "src/air_atk_imu901_config.v": "122f2210a8519795ea27a41dc6988631b8f23b06144986227a83b54b33fb2ed5",
+    "src/air_atk_imu901_parser.v": "54e301372dde9f2a706b0659e3dea0f7bd139416356a38d8e3d9e16283b863ce",
+    "src/air_drum_delay.v": "23d8307eb155c08c11d33c611f0c12250d46e223885f0e8a8efa33034e2a9f73",
+    "src/air_drum_event_merge.v": "47447d636a487c7f8982716dafd19fc641ee2be60e3013fad12c39f83a169136",
+    "src/air_drum_expression.v": "e58c246b2b2349f92b393d47575f8be3808a3427d89eaa0a0d94df5ce3a73087",
+    "src/air_drum_hit.v": "a9076e1903f27edf7ad73e2038779743005282a2346414f2c100685eb3c233cc",
+    "src/air_drum_imu_core.v": "855ed3f94c366c5fba0f3f3d571843e1cd47fa9e4260ee05b2ca169c2948977f",
+    "src/air_drum_master_gain.v": "c33b791d90e7945423e52c4f08f7e809e9e335012c4bc1e578f5fc1c473e999a",
+    "src/air_drum_partial_bank.sv": "b6e4801e9a6b3ab6ce12b18e7322bb824cc0a6c9d32bf8c2931e892d52e7230f",
+    "src/air_drum_synth.v": "265180a0ad3a4373f87bae61a444dbe0ff4e2f8cb74b2219adcc2cdbeff8a9b7",
+    "src/air_drum_voice.v": "165f3a2e8da237cc78b0eae7a3acfcb867ea1dcf4efe9f3e0ec0cca674aad742",
+    "src/air_uart_rx.v": "8480d2719fe3354ab9a73784b0f819dc703a19d2add517c5691af7f35ff656c2",
+    "src/air_uart_tx.v": "4cb5636be66038dd1cd50d4391159263172d1947682977e9fb18eb5b00a38de5",
+    "src/audio_mixer_32.v": "9c2394c1a22054f1e4ea1256f46c4d2d3ca90ae362f9aaacfb6780870c8533dc",
+    "src/ddr3_memory_interface/ddr3_memory_interface.ipc": "50f685396379ddd669464df716ae3a3872a7b2bd9272394a22c8303c5603d1f5",
+    "src/ddr3_memory_interface/ddr3_memory_interface.v": "d7cae5a16467ca35ee3f95411537344ae3702e1dba86a06571530e3dd0180c57",
+    "src/ddr3_memory_interface/ddr3_memory_interface_tmp.v": "aa54ba0024ee53054ab5df10c12d4523e685a6f8b5b415ea330bbc9ce8959bbe",
+    "src/drum_panel_envelopes.v": "91ba089e0a50f71ceaf0e2ff2f6f52b7d9170f647aeab3a8e178916afb312246",
+    "src/drum_ripple_pixel.v": "f22a041e2b1161271d43bb9603ea30083f85dc3a0ac3c200e6e1612e4300d112",
+    "src/flute_adc.v": "7012de419f9505404944aa6228c118113c0a83eb0aa7ab30743bbc746247ef62",
+    "src/flute_audio_control.v": "e74eb0d922f260a7175864a76c7c6090ee521923469a22f8b1086e97d5c6ee60",
+    "src/flute_breath.v": "7d9fa4a4cb5791b7da0fb491978da9193a65833d8862e808a8242ea1df98c7e9",
+    "src/flute_fingering.v": "7902236b6af9d882ea0ce3168278b4f0a8bca1e483f7d863681cde46c4e82ca7",
+    "src/flute_keys.v": "f39aa3c4f73e725ab5ed33d5fc136b469003d36c9f3fbc0918d918ba3079f3a7",
+    "src/flute_miso_filter.v": "cfb3c7ed6ddd437cd48ec92fc71a69a38dcf3a95af48a76261082f542affbca4",
+    "src/flute_telemetry.v": "0103c5d4f5048d2c4f9cb9b762567107964c4457694c357d531d1dbc9f8d44c6",
+    "src/flute_uart_tx.v": "fbd3dd71a807827129643a69ce0aa371c634b41a74aac1e66fdcb28da3e8d114",
+    "src/flute_voice.v": "cf0e833a21b91844795d9f96e86f93e9860af27ae4fa7e6656d0be328d45d624",
+    "src/flute_voice_select.v": "65e3603ceb88bc6b34568236b2778beac31f1edafc5740c8d371f67cce62ca1c",
+    "src/fx_audio_params.vh": "9e58ea6cbe876d4dca30936687a96ea0a272c7f197ba26c43326ce5bb72ba85a",
+    "src/fx_sample_ram.v": "58f8581042b17a0c0407f52db8bce684de5217436061f1865c701f37b47e9830",
+    "src/GMII_pll.v": "32f1b54efc48680b13bbe09e0a8acc52a8fcebed9801c3db02db15576a45d471",
+    "src/gowin_pll/gowin_pll.ipc": "02972f88241779c6488dd481b81fc40a454526a03e7c6e158f1271738c649705",
+    "src/gowin_pll/gowin_pll.v": "982ca6387f42086e88b4c858490eb00954a80a3284e0f07d959311d0975d7536",
+    "src/gowin_pll/gowin_pll_mod.v": "07398632b56749dbe52f6e5d739a526c7ca5e71c4060c7d062a64dada6e1a953",
+    "src/gowin_pll/gowin_pll_mod_tmp.v": "2ec696b4249642d3eada920c1eb847759008da0d33ce6cd5c281238d945987cc",
+    "src/gowin_pll/gowin_pll_tmp.v": "9a2e5f458010e32b6c2ee656c9da53fe7579982db69871e1f9b9018cea4df4df",
+    "src/guide_song_rom.vh": "44f559eea6ff6fa0055863f666337a4685edfc55807081d11198b6e7d766bbe0",
+    "src/hdmi_tx.v": "7326edfc0b308770ba5338c767ca7b61bf1bbfa864afb43843e8d920ce0b0d63",
+    "src/instrument_air_drum.v": "45b9d7097a3370f955aa9b97143ad9acd0d8063b3cfb391eb38670c403ffa71e",
+    "src/instrument_audio.v": "92940ace72e5994e20e78c18b1ebc72abc4b51fa2f51b90eba054f5580f4370a",
+    "src/instrument_flute.v": "5ad9d73cfa4d6805337808d531112b1a864a2f6788c2c559aaee4d0acbe15d6f",
+    "src/instrument_guide.v": "a42c020c64dc6c59fbdb0243bd305e0512c51d2fe0f96d07af0dc1c31138479a",
+    "src/instrument_top.v": "a394b4c5c17db200ffb552530bd676273008e43428706c8dbb83a13daec50854",
+    "src/key_velocity.v": "62d46524c5f08f96c60f9b6735451453b34f87937b1b752e7cc0c7e8907e7c22",
+    "src/key_velocity_curve.vh": "eaa2f29c2d19e9c48b62b7f112cbc25cffb55dd65b6e3c65968fb8d7ed000a71",
+    "src/keyboard_scan_input.v": "4cc98ad1357891a1913812131eb1f4e79f1d4dbce7c50c991368b07bf20edb8a",
+    "src/matrix_scan.v": "e8c9b98f1365167d167abf014226d8500a6351994d8dbbc2cda13403532952a7",
+    "src/mdio_master.v": "cb170e818ac5d34ce09732b5939f0649c385e19c82b55a59d4c3ccc40683ce47",
+    "src/midi_event_decoder.v": "627795e554372e7ab9858e5ccf74bb86bb483bc1b616b76fbd99c7b1270aeb9f",
+    "src/midi_keyboard_synth.v": "99002f6131b1ce11b2d6c362cafcc8b4c3f8c7e688b679acb5bb2d0ba6803c62",
+    "src/midi_keyboard_synth_v2.v": "4a09b97a73aacede682d70dfe768cb58b3e6c3af4ca913e32d25082a5a883d9f",
+    "src/midi_piano_voice.v": "c672b804315611c40bf00e6141e36f7bed852675687c4a101e22633fb66ff12b",
+    "src/midi_state.v": "319d87a7df25f156ed040b8aa137f92600042c057573cacf684e9c8e9c40d5a9",
+    "src/midi_three_key_synth.v": "e61fa7e9595b5f3c7308ab58d84633d4fce0a71ed026acac3da7e3ffff664f3b",
+    "src/pcm5102_i2s_tx.v": "02211e48a329578de5271f79bc3330597c5b015da6f8b474af20ff1085757de1",
+    "src/performance_telemetry.v": "55feec7d67bd8ebc90c75aae3304525abd99e5ed18049b8a450b93dd5c5b93eb",
+    "src/phy_config.v": "70b959714545eec10f3f52145c57674d04cabbd339e735d1fffdb332d2751ab9",
+    "src/piano_effects.v": "ac6d80cf94f5389789dd6ebcf95397e9ae35da27228d2834d6f57a2e3b25e039",
+    "src/piano_recorder.sv": "92b77d1d335db15599c65aa75ec93f388e3048c04b3ff788556387d5877c0b0c",
+    "src/piano_shared_mix.sv": "623fffef78246c6bece3354e26f0aadace02113859d1cf9eb9d323babaa3f96c",
+    "src/piano_voice_v2.v": "d80dc7abff666c2d8829992fda5193dca3239e34278b7eac238efab6c61cdd9b",
+    "src/piano_wave_rom.v": "a8fd98fdc41f64f15f4b07d45646fa115b1d681f557e5b5eee07ece4e4132890",
+    "src/pll_init.v": "502436115e507453e2c139a073f5b56484421311ef57088ce1a16140347957f5",
+    "src/pt8211_tx.v": "9876a05d32f0b4e10fd81b3a011251adcad515a9f6749dc5e1747a2736431eec",
+    "src/record_ddr_bridge.sv": "10eda11ad7aa3550df028dcc5a80dad374f3e4af6867fa3613b6501acadc873d",
+    "src/rgmii_byte_align.v": "16b944df8dce7b6274814e05f2d9dd976e72d346ea7bb520c11be1615fa3357f",
+    "src/spectrum_analyzer_32.v": "009dae596f995db7d14de00205dafd54c5604d6b02e8da92a0347af95abb78f6",
+    "src/spectrum_coeff_rom.v": "173fc4b16d7ee07c4a6a21c93db69448ec91049f4b95ed6161f5208a4ef86316",
+    "src/spi_tx_byte.v": "69eae510346c59d8f7cdd7cbf186e96933334a7f8057d7d9417e77d9a2486225",
+    "src/st7789_status.v": "ece140349ee0e5db58d4e2d344e4222f67371251cfff21072f4220ccbd7c51ce",
+    "src/studio_artwork.sv": "9b2c7d9d5147efe44ec52c8d45377afe1d15854ac55a525f9487481991b7f75b",
+    "src/studio_artwork_ddr.sv": "0aa5f74b42b36d692ab371e703940ad0c607a39233966846690bd14a57115e16",
+    "src/studio_asset_config.vh": "a993cce2c381c412d05bfad4f2fe441ba44a4d676f928cca38366fd6bf52b460",
+    "src/studio_asset_loader.sv": "9aac6598e883858b42fbb57c7245ce60cd5e469d7ec8f223052d9a5b29b15703",
+    "src/studio_asset_stream.v": "27b80bba17f74599f9745ea648370ce70b24642b4699f5e8c9b4660867a3c08b",
+    "src/studio_audio_looper.sv": "c19b2cd7f149d6b7e177acb763a30ed390e53c6ef8da8857bc64659de2558a37",
+    "src/studio_board_b.v": "b10f98509c63ba037f02188600a4ce9b56a9beb525955954b6c5e6afdde13764",
+    "src/studio_cache_ram.sv": "fd9e453b56c27fda47da39b8501946da209d4ff9a012dd757f4179c25f759d42",
+    "src/studio_colors.vh": "f086339333e5c6de6d08fb6620c1eebb170067e331ae5b5d45f78b5c4349a008",
+    "src/studio_control_panel.sv": "7b03b931a839804220c44c0bb3efa3275b05a323f260ece4d2b74c8cb16759a4",
+    "src/studio_controller.sv": "7abecf7491291c5e72a367ced1b9059d38250a04f1de8a6f16629b780da03f4c",
+    "src/studio_ddr_arbiter.sv": "22509c005c693869c3283e9a0f699c405ae9c0ceceb2135428f5274a6769f3a5",
+    "src/studio_display_link.v": "5eb022692ac393e62fa88a0308f0f0cbe39b339c5e8cb68e870c46fd24527e2b",
+    "src/studio_display_lookup.vh": "59580e5050b93f6e826a4f4af675ce80efec5865864fb4b7f50c34e69326a740",
+    "src/studio_drum_activity.sv": "f31f7249e5e5c237a9a9d8d8801c4dfc9ecfc3a88fd1b3231a615d042e1d8a68",
+    "src/studio_extra_control.sv": "74d866f46d18d1560eba163915d94ab25c9b6eba290f80d6d8450fce495fc5d8",
+    "src/studio_extra_graphics.sv": "1005ffc2c275fe9c9aed047c4946a3496acda50d93c7e2c022f636f6d787bc94",
+    "src/studio_font.v": "e2a0b560463d03215a6aeb90a58d5ddea6ba260a9128f350c08f939b75b03961",
+    "src/studio_game_songs.vh": "f4e508f4245b0f8e08d720f4685d53e6dbb6ef911247048557bfc25d6e4f9e60",
+    "src/studio_keymap.v": "13b3ae00349bd994efdbf1ea51b156a53eee089342dd2238b7e4698ef45c38c2",
+    "src/studio_keys.vh": "b6930ca1052dcc2e29239d2b634f53fab6cade5a76deb106a12c9fbec771196e",
+    "src/studio_lab_fft.sv": "7e0330890bea15bb922f35b84536cccb334e5f4044ab26f63c2a63e2db8cc692",
+    "src/studio_lab_twiddle.vh": "42bdde5942f92802e456206092b4110add76bbc5eb0cbd3e9a910b6ba9069f41",
+    "src/studio_large_font.v": "f20a40d5c0e913fe3b0b4767cedd5e1f01133d672a0378282fb683972f6297f5",
+    "src/studio_net_frames.v": "209a9f260d2e961d99bf22d2b511b8bf6d4c9c2c5917d8f3502ce8eb622926df",
+    "src/studio_net_protocol.vh": "ec7e3f8bc0172deed5fd1871e274a1b87aa387abc18674c341ee38bb4338e9e8",
+    "src/studio_palettes.v": "3004be3d4af4d0f88482e8eb299579034aa6e837e7f7f56c031125bc5145d011",
+    "src/studio_pixels.v": "08c40b7cd571cd81a0e970af66ea3211cfe11f816e0e8d74b622a2095605f42d",
+    "src/studio_record_protocol.sv": "55aa4655416ad43174f511fe72ddab9273e59e9547f5d7cc10d9746bb3ec5e64",
+    "src/studio_recorder.sv": "856722b66c2e939a7a2be1ffc139459cef3f9d14f4b6e8f00b0128687e500329",
+    "src/studio_remote_drum.sv": "87e14cbf92c1663210ffb21ece48963b005f7cff1fe169e148d1b92b1bbbc178",
+    "src/studio_remote_io.v": "44eb4b94c3b6bad908194606412115c7d05b75e151e07b570364102415a3429b",
+    "src/studio_renderer.sv": "5983d59ddbd34eadee37d9aa8e59305a8c48a5fd6aeea61a84ae29c904b0064d",
+    "src/studio_rows.v": "0140680c637667db5042b1b5a27070a78634cc0cbbcf3f7327cd3cb49a19c259",
+    "src/studio_scope_coordinate.sv": "4e17971786399d91f67c4f51072500b9b712a31bab2713572f7618a241acad38",
+    "src/studio_score_store.sv": "40e63af8379a312b24aabb674c3f62669592dd2ef765744ababa70f77553ec16",
+    "src/studio_slider.vh": "ad3da819aeb6a49d417ddb45a99d2aa2a8a43bcd750b00eccc20e763460cdaf1",
+    "src/studio_sustain_events.sv": "acb59437c0e2fc3a683e78393c7420e2eb13d7b844e91338dbb3d6d064c6afa6",
+    "src/studio_sustain_pedal.sv": "2366c74adfbc9c58a5aff8bf8eedfb3e7a8a0fa317f1b7d89d7f3d39e5f3c94f",
+    "src/studio_text.vh": "3ec6ec66c7c1141ebb4956e308c137a699bde50d278d8bee30c8295e002e97cf",
+    "src/studio_tiles.v": "768ee5bdaa3532b1c548909e5d2eb2c3556afcde72c03a92f6770daa11f73e8a",
+    "src/studio_touch_urgent.sv": "f83fcb499057fc0757083b6cec765b62e8bc2494208b2087e83278b36c84de4c",
+    "src/studio_u32_ge.sv": "f5280c5aed75e8f55062672e39119e75420a84805b21b5d3dc0806b5829f4200",
+    "src/studio_uart_router.sv": "3b9567899d93a1236cfa45eb1ef90d81e5933940d5bba04967dbb8a8a65b0dd8",
+    "src/tft_font_rom.v": "0759ef5699c72e00aaca76fa74a64ca3322d9948f9386c690db14f2c1140b213",
+    "src/tft_status_pixels.v": "b16cf286048a2026664050f799008362f9d278ae082d388f4ad6f5cd734e7c3c",
+    "src/tmcp_link_badge.sv": "d2c54447674cba8cf55909351462949f780da4e117a0df10fc3f352b90a9012a",
+    "src/tmcp_minlink_core.sv": "27f2d61540c4b09b8f2db5df56b5c12c25998f530b1513fcdf3029595b99d2b8",
+    "src/tmcp_sync_fifo.sv": "d638188b887100caa62d6ac061213c6fcd2cfe13bceee5dbe48e370c69111756",
+    "src/tmcp_uart_endpoint.sv": "e4fbe07ad42a4e6559544ef33e8baac2e357b53b3faba73e08761b3c568ad303",
+    "src/tmds_encoder.v": "db000779ff87835b03b71318df146b864899b8f1d09689c5f10cc66b4e9ce724",
+    "src/touch_report.v": "3f8ad74629f5a546147a56aaf78c9ca38ead7db0277f6e5e86a7849a60d1b4a0",
+    "src/uart_rx_8n1.v": "d15fb77a436598bb5162b7ef34863a6ac981409d46d0f47121441b4ef2dfba25",
+    "src/ui_artwork.v": "4a0fa12397b25c571e1a400a075d95026db752038ec391a1d9353d55f735ed1d",
+    "src/ui_cdc_snapshot.v": "36bc82467b5c395611304e9cc636881d2f9af1126af8e83bd7a1cf2769b6b29c",
+    "src/ui_controller.v": "17d2991450bc5f4f0e6d677887430a2ec75505778396938cb5b3eff9ab02723f",
+    "src/ui_controller_v2.v": "aecdafeed826a659bd13fb0a35a9708b82a3cede0c105d538e1b52eab6aeb8d0",
+    "src/ui_font_rom.v": "810b1bf928dd6df9cfe732e4b383cb23cd9bb83bcdc79a6aae0ebc49ae098b15",
+    "src/ui_fx_math.vh": "0027300a6f7118ba10163407a86b4076d0b93b8f4154ef3bcb35fbd48614ca8a",
+    "src/ui_layout.vh": "1ae146c83381263ace1034fbafc4a3493d202f9821791da25a55300dfcf26c5f",
+    "src/ui_lissajous_capture.v": "52cc7b1ab5fa97ac655803c1668cfd61e706330be639955b3f47e4520ca8f977",
+    "src/ui_mask_events.v": "18d6ff4240e1b86c9c0bd84b0463b1018c9c5a910204f9d7a5857caaefa318d1",
+    "src/ui_master_volume.v": "91c846a83f38152d289840f46f61a67d93c580b7699ad2e26697eff30b4b4bc0",
+    "src/ui_math.vh": "7cc5cac13f95b4162935a6cc062634c2899e76c72c42c12da3fadf14cdc4d841",
+    "src/ui_note_merge.v": "f5d4c675b75280126b38c1bf9c21a3c3d15b80da22f35342282d5d124a461fca",
+    "src/ui_pixels_rom.v": "e0be37730223d7e5d9618d3e6807757534fca7186c6e9d30ebc59856fc47dc13",
+    "src/ui_plot_math.vh": "fe095754b793c7b9408138362c362c154172cf0fad907f04e5534b8b5a229019",
+    "src/ui_renderer.v": "8b80f34ae0cb1a1c29de5cf4977589325d245c2fdf4d8416c1fa313c0a9a846d",
+    "src/ui_renderer_v2.v": "e8766e7072c674cf1509fc964c58c768cb254e27caa57e78d08d947ec8594bb5",
+    "src/ui_rows_rom.v": "51206210648aaba9eff4a036123bfb3841cde7ae1307dba5c8c8371f9c4245a3",
+    "src/ui_scope_capture.v": "1a9d12adf78484b80b340fe7a07881262c3fa8b870fb68a67a843685ce655df8",
+    "src/ui_tiles_rom.v": "4dbc434bf59256ae5086d4c6bbae8b33c358b64d9efe2da060c027843c2d9bfe",
+    "src/ui_v2_font.vh": "210cc9df21a0abb423fc7f7a8250e6e7fdfe96efe0166a42ca1920b4b3c71d9c",
+    "src/ui_v2_layout.vh": "63b6999c149a8daab4bad326bc493bb97db892d90dda5fb06aea5e2ff42f6169",
+    "src/ui_v2_render_map.vh": "e4c7b49c7b5e1c14b00821f1668435a0cf9a291fcefaa4e797dee5617f66f58e",
+    "src/ui_wind_layout.vh": "ed60cf327a0795d692b60697202d61b70fb3d00bc6f39f034baa6b8190a4eb4f",
+    "src/usb_fs_phy.v": "4c9bc22e960c75f1a3b9b5a75e03ba668dfbe1f72da78c758e12bdd82e3da04c",
+    "src/usb_fs_transaction.v": "a31fcb8ddc4f40674f6a6f06c535fc6a826361736f10412aab85526c5979cc11",
+    "src/usb_pll.v": "8a6bd2681d57dd00da2ca403de0ad3490697acd5d4d3226e60375deb4a573343",
+    "src/usb_touch_host.v": "8bb19b640e279991c9586a2c585cc7539c3caf1138ce94b73b22171390d56b4a",
+    "src/video_diagnostics.v": "81a86981e8f3b1f598013feecccb028db604ec365708a4b599350728d823c7b3",
+    "src/video_pll.v": "cbbc9f499ead64af28ce2b2020530940288887ad455cb847eae651b683a8b9bd",
+    "src/video_timing.v": "241cc5b45d4aa91d4f65f0fa3c47772739e92a108960ad5fe3f793f641be25ad",
+    "src/ws2812_drum_panels.v": "492eae515373f97faa258890fd005cec6149cf18afd56e1e7397acc785dabc47",
+    "src/ws2812_keyboard_guide.sv": "7e9fa1d921809b05a87f59e37343805f51cbf4384c49c4779ce5ab789d41c43a",
+    "src/ws2812_matrix_32x8.v": "c453189d333b1f8172dbd9d356351cf583bb38bab42e81d619a015599f0ab269",
+    "src/ws2812_status.v": "bf0c75d900ef2a9a5e630a91cdc71d206b6831ba994f09012d595358fbb7edd0",
+    "synthesize_board_b.tcl": "aa66965adb97b3a7230c127708edb2ead48ecfab69426eabc83353559be31adc",
+    "TangMusic_B_Clean_UI_D206.gprj": "843021d3babe1ca36b739e7935f29f3d1090b84b04d00209ed62663f96c2f9b3"
+  },
+  "engineering_file_count": 177,
+  "selected_development_tool_hashes": {
+    "tools/append_piano_labels_d206.py": "05676eead642fc4307b111390839ca94383008ab684f6b4c75460caa3198627d",
+    "tools/emit_rom.py": "334e1c3de0d8af38a84c8ef3e42c3452dbf08b28bac79fe03e2b593a4574768b",
+    "tools/reference/d205_font_250_baseline.json": "7e8c79195c5ee77847d26d296e586edae146c952c910d2abecb3131145b8c38f",
+    "tools/generate_game_songs.py": "f941951d9ba1bcafa9ac3a7fb7748c9e418ab3080afc3185c8e5b40cc4efeee2"
+  },
+  "historical_design_input_hashes": {
+    "tools/reference/00.png": "c6bd85a4600149c1cbdacfc49b2b7788973b8d05690dcbbaca97658e5ef4dd67",
+    "tools/reference/01.png": "ed980b8ed7910305dd71e1cd7475bdac0aa3ad933d52736bdb6a4f2979b281f8",
+    "tools/reference/02.png": "d5939ee3dfe8942c29f0aae9aeb9ed9cf2dac4c3d96196f0bbc1e90a2c679e8c",
+    "tools/reference/03.png": "ab461c1b64afea25806f885a46318153efd109e664fbe05a97ef72c95fdbca28",
+    "tools/reference/04.png": "e70219844e0e02c38c69c362cac895f1d3c42bd050cef542b59fcbabe67b7ce2",
+    "tools/reference/05.png": "72b9fe556df86c6e057ec29f0f3fb24e24d7063230907edc87b98a678779838a",
+    "tools/reference/06.png": "759c3757ef6a3cf07438e3a6932d50b8f2481a879922c7373b0fbb1d9471b382",
+    "tools/reference/07.png": "fcbba5397091ee672583c897efc3614dff1a641249190634bb96454f79593936",
+    "tools/reference/08.png": "55cc178f468d61a8b76bb1702b775b53a78d0cc7c1e1b921d2eaae719c9f62f3",
+    "tools/reference/09.png": "fca7f5f191d34e668c53aae6d15cb403a3ebf9de87ac2d21dee25786175512d2",
+    "tools/reference/10.png": "00e25b04c21b2711a681aaa4faca8572b72c1f0648a53c344ec2881986f12248",
+    "tools/reference/11.png": "00e25b04c21b2711a681aaa4faca8572b72c1f0648a53c344ec2881986f12248",
+    "tools/reference/12.png": "fbb1c7d878716f3c33939f5c6cdcd8215c6ee3243ae5e7c93ae3f6edae4fcc4c",
+    "tools/reference/13.png": "e3a6fd676957badd3b384e8a9de7a43ccb81561fb5523b2be83e6805dadd370b",
+    "tools/reference/14.png": "518171b3356d106330e3dc46d4a8c4c82387161a16d78838bbc0ed9e1b0832a6",
+    "tools/reference/15.png": "5da0c434b4d368639c4b2fb55a37b4a88f127bd00c356af1a37bc868ab0aa00a"
+  },
+  "current_artifact_hashes": {
+    "impl/gwsynthesis/TangMusic_B_Clean_UI_D206.vg": "76c618d5a7fd93b2f36ed66d1c93cc8e3335ef87b38df0252692291fc46e803b",
+    "impl/pnr/TangMusic_B_Clean_UI_D206.bin": "4fec6938099ca50eb9ec0d50f395bb193a6a6976a495c095e92a389d76f63030",
+    "impl/pnr/TangMusic_B_Clean_UI_D206.binx": "0bb95ae8c1fc1a257ff80765e186a330fff786aabec79c8981108b15fcc798a1",
+    "impl/pnr/TangMusic_B_Clean_UI_D206.fs": "16cb512602466caf91ff4fe791f35403526ddc4d7b0787916a34260ce93f70bf"
+  },
+  "checks": {
+    "json_valid": true,
+    "engineering_file_count_177": true,
+    "current_FS_hash_matches_audit": true,
+    "gprj_dependencies_exist": true,
+    "gprj_file_count": 116,
+    "tools_and_design_references_exist": true
+  }
+}

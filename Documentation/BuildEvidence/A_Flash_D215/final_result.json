@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "version": "A D215",
+  "device": "GW5AST-138C",
+  "usb_location": 4417,
+  "flash_program_and_verify": true,
+  "explicit_flash_reload": true,
+  "reloaded_usercode": "0000D215",
+  "status_code": "00026020",
+  "done_final": true,
+  "configuration_error_bits_0_to_3": 0,
+  "auto_boot_1st_fail": false,
+  "auto_boot_2nd_fail": false,
+  "status_reference": "Installed official UG704-1.0.7E table 5-1 (printed65 / PDF73)",
+  "validation_correction": "Initial exact comparison to SRAM status26230 was too strict; successful Flash boot26020 clears old auto-boot-failure bits",
+  "source_sha256": "e222df1028f30b38fa79a5296c9da6554220f635b2dee7f6f361170bb82ff05c",
+  "finished_utc": "2026-11-02T15:42:36.602629+00:00",
+  "physical_power_cycle_after_success": "not performed; explicit Reprogram from Flash verified",
+  "first_attempt": "failed at46%; user power cycled and lower-clock retry passed",
+  "B_board": "not programmed"
+}

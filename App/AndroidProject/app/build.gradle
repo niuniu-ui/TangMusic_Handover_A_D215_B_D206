@@ -1,0 +1,15 @@
+plugins { id 'com.android.application' }
+tasks.register('packageInstrumentUi', Copy) {
+    from rootProject.file('ui')
+    include 'index.html', 'instrument-style.css', 'instrument-ui.js', 'score-ui.js', 'performance-ui.js'
+    into layout.projectDirectory.dir('src/main/assets/web')
+}
+android {
+    namespace 'cn.tangmusic.app'
+    compileSdk 36
+    defaultConfig { applicationId 'cn.tangmusic.app.minlink'; minSdk 26; targetSdk 36; versionCode 703; versionName '0.7.3-library' }
+    buildFeatures { buildConfig true }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    buildTypes { release { minifyEnabled false } }
+}
+tasks.named('preBuild').configure { dependsOn 'packageInstrumentUi' }

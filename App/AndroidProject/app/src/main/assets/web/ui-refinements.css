@@ -1,0 +1,25 @@
+/* Local preview refinements; source Android assets are unchanged. */
+html { scroll-behavior: auto; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.preview-notice { padding: 9px 18px; font-size: 11px; line-height: 1.5; color: #a9c6d8; background: #122c3b; text-align: center; border-bottom: 1px solid #254455; }
+.preview-notice strong { color: #9be4ff; font-weight: 600; margin-right: 5px; }
+.bottom-nav { background: #0b1b28; backdrop-filter: none; -webkit-backdrop-filter: none; }
+dialog::backdrop { background: #020c16d9; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.page.active { animation: none; }
+.device-results { margin-top: 18px; border-top: 1px solid #274254; padding-top: 18px; }
+.ble-list-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom: 12px; }
+.ble-list-head strong { color:#cde4f2; font-size:12px; font-weight:500; }
+.named-only { font-size:10px; color:#79d5c2; background:#12342f; padding:4px 7px; border-radius:5px; white-space:nowrap; }
+.ble-search { display:flex; align-items:center; gap:8px; margin:0 0 12px; color:#93b2c8; }
+.ble-search input { min-width:0; width:100%; background:#0b202e; color:#eef8ff; border:1px solid #305063; border-radius:10px; padding:11px 12px; font:inherit; font-size:16px; }
+.ble-search input:focus { outline:2px solid #76d8ff; outline-offset:2px; }
+.device-result { width:100%; min-height:76px; margin-top:8px; text-align:left; contain:layout style; }
+.device-result .grow { min-width:0; }
+.device-result strong { display:block; overflow-wrap:anywhere; font-size:14px; }
+.device-result small { display:block; font-size:10px; color:#92aec1; margin-top:5px; overflow-wrap:anywhere; }
+.ble-device-icon { display:grid; place-items:center; flex:0 0 32px; width:32px; height:36px; border-radius:9px; background:#15374b; color:#7ed7ff; font-size:20px; }
+.device-result .connect-label { font-size:11px; color:#85d4f7; white-space:nowrap; }
+.ble-empty { margin:16px 0 4px; color:#94aec1; font-size:12px; line-height:1.7; }
+[hidden] { display:none !important; }
+.loop-progress > span, #loopProgress { transform-origin:left center; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }

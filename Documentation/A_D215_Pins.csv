@@ -1,0 +1,146 @@
+﻿信号名,FPGA球位或差分球位,当前CST属性,依据
+clk,V22,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+key_n,AB13,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+sustain_sig,B17,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+piano_guide_din,B21,IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+ENC1_A,R19,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+ENC1_B,P19,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+ENC2_A,U21,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+ENC2_B,T21,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+ENC3_A,R17,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+ENC3_B,P16,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+S1_N,T18,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+S2_N,R18,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+S3_N,W17,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+S4_N,V17,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+S5_N,W21,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_drive[0],AA18,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_drive[1],AB20,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_drive[2],AA21,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_drive[3],AB22,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_drive[4],Y22,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_drive[5],V20,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_drive[6],N14,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_drive[7],P17,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_sense[0],AB18,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_sense[1],AA19,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_sense[2],AA20,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_sense[3],AB21,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_sense[4],Y21,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_sense[5],U20,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_sense[6],N13,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+fpc_sense[7],N17,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+rgb_led,J16,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+i2s_bck,A21,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+i2s_lrck,A16,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+i2s_din,A20,IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+PA_EN,AB16,IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+matrix_din,A18,IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+debug_uart_tx,U15,IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8,FPGA/A_D215/constraints/studio_board_a.cst
+air_drum_key_n,Y12,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+imu_rx,E17,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+imu_tx,F16,IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+imu2_rx,F14,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+imu2_tx,F13,IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_keys_n[0],E13,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_keys_n[1],E14,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_keys_n[2],C14,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_keys_n[3],C15,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_keys_n[4],C13,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_keys_n[5],B13,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_keys_n[6],A13,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_keys_n[7],A14,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_spi_cs_n,B15,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_spi_clk,B16,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_spi_mosi,D15,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_spi_miso,D16,IO_TYPE=LVCMOS33 PULL_MODE=DOWN BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_uart_tx,D14,IO_TYPE=LVCMOS33 PULL_MODE=NONE BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+bt_uart_rx,D20,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+bt_uart_tx,C20,IO_TYPE=LVCMOS33 PULL_MODE=UP DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+bt_link_n,F15,IO_TYPE=LVCMOS33 PULL_MODE=UP BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+drum_led_din,D17,IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_bank[2],M6,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_bank[1],P2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_bank[0],P5,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[14],D1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[13],K1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[12],K4,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[11],H3,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[10],L1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[9],H5,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[8],J5,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[7],J1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[6],G3,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[5],H2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[4],J2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[3],J4,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[2],G2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[1],K2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_addr[0],M1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_odt,M2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_cke,K6,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_we,M5,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_cas,L4,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_ras,L5,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_cs,P4,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_reset_n,L6,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_ck,"L3,K3",IO_TYPE=SSTL15D PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dm[3],W1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dm[2],T6,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dm[1],V7,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dm[0],AA4,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[31],Y2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[30],U1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[29],V2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[28],U2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[27],U3,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[26],T1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[25],Y1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[24],W2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[23],T5,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[22],V5,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[21],T4,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[20],Y6,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[19],R4,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[18],U6,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[17],R6,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[16],U5,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[15],Y9,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[14],AB6,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[13],W9,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[12],AB8,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[11],Y7,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[10],AB7,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[9],Y8,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[8],AA8,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[7],AB1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[6],AB5,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[5],AB2,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[4],AA1,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[3],V4,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[2],AA5,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[1],AB3,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dq[0],Y4,IO_TYPE=SSTL15 PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dqs[3],"R3,R2",IO_TYPE=SSTL15D PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dqs[2],"W6,W5",IO_TYPE=SSTL15D PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dqs[1],"V9,V8",IO_TYPE=SSTL15D PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+ddr_dqs[0],"Y3,AA3",IO_TYPE=SSTL15D PULL_MODE=NONE DRIVE=8 BANK_VCCIO=1.5,FPGA/A_D215/constraints/studio_board_a.cst
+phy_clk,V19,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+phy_rst_n,W20,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+tx_clk,F20,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+tx_ctl,F21,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+txd[0],D21,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+txd[1],E21,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+txd[2],D22,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+txd[3],E22,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+rx_clk,G21,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+rx_ctl,G22,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+rxd[0],F18,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+rxd[1],E18,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+rxd[2],C22,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+rxd[3],B22,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+phy_mdc,V18,IO_TYPE=LVCMOS33 PULL_MODE=NONE,FPGA/A_D215/constraints/studio_board_a.cst
+phy_mdio,U22,IO_TYPE=LVCMOS33 PULL_MODE=UP,FPGA/A_D215/constraints/studio_board_a.cst
+piano_scan_probe,C18,IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+flute_key_probe,D19,IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
+drum_hit_probe,C19,IO_TYPE=LVCMOS33 PULL_MODE=DOWN DRIVE=8 BANK_VCCIO=3.3,FPGA/A_D215/constraints/studio_board_a.cst
